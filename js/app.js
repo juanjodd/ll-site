@@ -124,20 +124,24 @@ function haversine(a, b, c, d) {
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 const nearest = (lat, lon) => DATA.stations.reduce(
-  (best, s) => haversine(lat, lon, s.lat, s.lon) < best.d
-    ? { s, d: haversine(lat, lon, s.lat, s.lon) } : best,
-  { s: DATA.stations[0], d: 1e18 }).s;
+  (best, s) => { const d = haversine(lat, lon, s.lat, s.lon);
+    return d < best.d ? { s, d } : best; },
+  { s: DATA.stations[0], d: 1e18 });
 
-/* ---------- which place the page opens with (req. 10, v2.3) ----------
-   Nearest to the visitor when the browser ALREADY has their position, otherwise the
-   wetest place of the forecast — and ties there broken by what has actually fallen
-   this hydrological year, then by the same day last year, then by station number so
-   the answer is the same in every browser. */
+/* ---------- which place the page opens with (req. 10, v2.3 / v2.4) ----------
+   Nearest to the visitor when the browser ALREADY has their position **and that
+   place is within 100 km of it** — a "nearest" 300 km away says more about the
+   map than about the visitor's weather, so we keep the default instead.  The
+   default is the wettest place of the forecast, ties broken by what has actually
+   fallen this hydrological year, then by station number so the answer is the
+   same in every browser.  (v2.4 dropped the last-year tie-break: the Guadalquivir
+   report has no last-year figure, and a chain both networks can answer is the
+   only honest one.) */
+const NEAR_MAX_KM = 100;
 function wettestPlace() {
   return [...DATA.stations].sort((a, b) =>
     rainSum(b) - rainSum(a) ||
     (b.acc ?? -1) - (a.acc ?? -1) ||
-    (b.accP ?? -1) - (a.accP ?? -1) ||
     a.n - b.n)[0];
 }
 /* No surprise permission dialog: with the locate button gone (v2.3.1) the page NEVER asks
@@ -155,7 +159,11 @@ async function positionIfAlreadyAllowed() {
 }
 async function selectByLocation() {
   const here = await positionIfAlreadyAllowed();
-  if (here) select(nearest(here.lat, here.lon), true, false);
+  if (!here) return;
+  const near = nearest(here.lat, here.lon);
+  /* v2.4: only upgrade when that nearest place is genuinely close by; at 300 km
+     the wettest-place default carries more useful weather than a distant "near" */
+  if (near.d <= NEAR_MAX_KM) select(near.s, true, false);
 }
 
 /* ---------- rendering ---------- */
@@ -187,19 +195,25 @@ function renderLegend() {
       `<span><i style="background:${fcColor(lo + 0.01)}"></i>${t(key)}</span>`).join("");
 }
 
-/* The detail lines (req. 3, v2.3): as few words as possible, no station numbers, no
-   headings.  First the 5-day picture, then what it adds up to, then the observed
-   accumulation of the hydrological year and last year's on the same day — and the three
-   quantities share two columns, so the numbers line up BY THEIR LAST DIGIT and every
-   line of words starts at the same x (see .q in style.css):
+/* The detail lines (req. 3, v2.3 / v2.4 / v2.4.1): as few words as possible, no station
+   numbers, no headings.  First the 5-day picture, then what it adds up to, then the
+   observed accumulation of the hydrological year — and v2.4.1 adds the third line back:
+   the same period LAST year, drawn only where a source publishes it (Hidrosur's
+   comparada does; the Guadalquivir bulletin does not).  A CHG card simply has one line
+   less — the asymmetry is the sources', not the site's.  The quantities share one
+   column, so the numbers line up BY THEIR LAST DIGIT and every line of words
+   starts at the same x (see .q in style.css):
       ▮▮▁▂▃   L M M J V
-       28,8   litros en 5 días
+       28,8   litros previstos en 5 días
       185,6   litros desde 1 oct
-      139,2   litros entre 1 oct y 16 nov de 2025                              */
+      139,2   litros entre 1 oct y 19 nov de 2025                      */
 function detailLines(st) {
   const dates = fcDates(), n = dates.length;
-  const D0 = dates[0] || "";
   const L = t("litres");
+  /* v2.4.1: presence of the accP KEY in the data is the contract — build.py ships it
+     for exactly the stations whose source carries last year, never for the others. */
+  const hasP = "accP" in st;
+  const D0 = dates[0] || "";
   const hyYear = +D0.slice(0, 4) - (D0.slice(5, 7) < "10" ? 1 : 0);
   const lastYear = t("day_of_year", fmtDay(D0), hyYear - 1);
   const shown = (v) => v == null ? "—" : num(v);        // a missing value never says "— litros"
@@ -214,7 +228,7 @@ function detailLines(st) {
   return `<p class=hl>${barsHtml(st)}</p><div class=q style="--qw:${qw}ch">` +
     row(rainSum(st), t("in_days", n), " tot") +
     row(st.acc, t("since_1_oct")) +
-    row(st.accP, t("between_dates", t("oct1"), lastYear)) + `</div>`;
+    (hasP ? row(st.accP, t("between_dates", t("oct1"), lastYear)) : "") + `</div>`;
 }
 
 function popupHtml(st) {
@@ -269,7 +283,8 @@ function renderDirectory() {
 
   $("#directory").innerHTML = provHtml.join("");
   $$("#directory li[data-n]").forEach(li =>
-    li.addEventListener("click", () => select(DATA.stations.find(s => s.n === +li.dataset.n), true)));
+    li.addEventListener("click", () =>
+      focusPlace(DATA.stations.find(s => s.n === +li.dataset.n))));
 }
 
 /* ---------- search: every place of the network, rain or none (req. 9, v2.3) ----------
@@ -333,7 +348,7 @@ const stOf = (n) => DATA.stations.find(s => s.n === n);
 function choosePlace(st) {
   if (!st) return;
   clearSearch();                   // close the dropdown; the box is ready for the next look
-  select(st, true);                // card + marker + map, and scroll up to the card
+  focusPlace(st);                  // a picked place behaves like a directory row (v2.4)
 }
 
 function wireSearch() {
@@ -390,17 +405,26 @@ function select(st, pan = false, scroll = pan) {
   const mk = markers[st.n];
   if (mk) {
     mk.setStyle({ weight: 2.5, color: "#374151", radius: 8 });
-    /* v2.3: picking a place ZOOMS onto its marker — "when a location info title is
-       selected, do a zoom on the marker".  A pan alone left the marker swimming in a
-       wide grey view; zoom 10 is roughly a comarca: close enough to place the point in
-       the terrain, far enough to still see the towns around it.  Never zoom OUT: if the
-       reader had come in closer, their zoom stands. */
+    /* v2.4: tapping a MARKER no longer zooms — the balloon answers "what is this
+       dot", and yanking the view closer only hides the neighbours around it.  A
+       place picked in the directory or the search box still gets a zoom (that is
+       an explicit "take me there"), which focusPlace() does on top of this. */
     if (pan) map.setView([st.lat, st.lon], Math.max(map.getZoom(), 10));
   }
   renderCard(st);
   /* the card sits ABOVE the map (v2.3), so picking a place in the list at the bottom
-     brings the reader back up to it — but only when they asked for it (pan). */
+     brings the reader back up to it — but only when they asked for it (scroll). */
   if (scroll) $("#card").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+/* Chosen from the LIST (or the search results): zoom onto the place, open its
+   balloon, and bring the map into view (v2.4, req. 6).  The marker tap does NOT
+   call this — a tap just opens the balloon where it is. */
+function focusPlace(st) {
+  if (!st) return;
+  select(st, true, false);
+  if (markers[st.n]) markers[st.n].openPopup();
+  $("#map").scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
 /* ---------- init ---------- */
@@ -415,8 +439,8 @@ async function boot() {
   measureScale();                        // log scale for the bar plot (req. 3)
 
   map = L.map("map", { scrollWheelZoom: false });
-  /* The whole region, once — the default view the map returns to.  Both the opening and
-     the "balloon closed" reset fit to this, so the retreat matches the first sight exactly. */
+  /* The whole region, once — the default view.  The opening fits to it (v2.4:
+     closing a balloon no longer returns here: the reader's view is their own). */
   const HOME = L.latLngBounds(DATA.stations.map(s => [s.lat, s.lon]));
   /* Quiet basemap (req. 2): plain OpenStreetMap tiles — no API key, ever — muted
      with a CSS filter on the tile pane. CARTO Positron was tried in v2 and began
@@ -432,21 +456,15 @@ async function boot() {
       color: "#ffffff", weight: 1.5 }).addTo(map)
       .bindTooltip(st.name)
       .bindPopup(popupHtml(st))
-      .on("click", () => select(st, true, false));   // zoom onto the tapped marker, stay on the map
+      /* v2.4: a marker tap opens the balloon and selects, but the view stays
+         exactly where the reader left it — no zoom on marker select. */
+      .on("click", () => select(st, false, false));
   }
   map.fitBounds(HOME, { padding: [12, 12] });
 
-  /* Closing a balloon zooms the map back out to the whole region (v2.3.1).  The tricky
-     part is Leaflet's autoClose: switching from one marker to another fires popupclose for
-     the old one and popupopen for the new one in the same gesture, and a naive reset there
-     would zoom the reader out and straight back in.  So we remember whether a popup is
-     open, defer the check by a tick, and only retreat when NOTHING is open any more. */
-  let balloonOpen = false;
-  map.on("popupopen", () => { balloonOpen = true; });
-  map.on("popupclose", () => {
-    balloonOpen = false;
-    setTimeout(() => { if (!balloonOpen) map.fitBounds(HOME, { padding: [12, 12] }); }, 0);
-  });
+  /* v2.4: closing a balloon NO LONGER retreats the map to the whole region (the
+     v2.3.1 reset).  The view the reader chose is theirs; only the "whole region"
+     opening above moves it on load. */
 
   renderDirectory();
   wireSearch();

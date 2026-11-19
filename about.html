@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Acerca de — lloverllover</title>
-  <link rel="stylesheet" href="css/style.css?v=2.3.4">
+  <link rel="stylesheet" href="css/style.css?v=2.4.1">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>🌧️</text></svg>">
 </head>
 <body>
@@ -20,9 +20,11 @@
 
     <div class="i18n-es">
       <h2>Acerca de</h2>
-      <p><b>lloverllover</b> reúne, para cada estación pluviométrica de la red SAIH Hidrosur en el sur
-      de España, la <b>lluvia prevista los próximos 5 días</b> y la <b>acumulada en el año
-      hidrológico</b> en curso (1 oct – 30 sep), cotejada con el mismo periodo del año pasado.</p>
+      <p><b>lloverllover</b> reúne, para cada punto con pluviómetro de las dos redes SAIH del sur
+      de España —<b>Hidrosur</b> (Junta de Andalucía) y la del <b>Guadalquivir</b> (Confederación
+      Hidrográfica)—, la <b>lluvia prevista los próximos 5 días</b> y
+      la <b>acumulada en el año hidrológico</b> en curso (1 oct – 30 sep). Son <b>294 lugares</b> con
+      nombre de municipio, no códigos de estación.</p>
 
       <h3>Las barras</h3>
       <p>Cinco barras por estación, una por día: los litros dentro de cada barra y la inicial de la
@@ -41,29 +43,39 @@
 
       <h3>Los datos</h3>
       <ul>
-        <li><b>Observado:</b> la precipitación comparada del
-          <a href="https://www.redhidrosurmedioambiente.es/saih/resumen/precipitacion/comparada">SAIH Hidrosur</a>
-          (Confederación Hidrográfica del Guadalquivir / Junta de Andalucía). El acumulado del año
-          hidrológico lo publica el propio SAIH, y cada ficha enlaza con la página oficial de su
-          estación.</li>
+        <li><b>Observado:</b> dos redes oficiales. La precipitación comparada de
+          <a href="https://www.redhidrosurmedioambiente.es/saih/resumen/precipitacion/comparada">SAIH
+          Hidrosur</a> (Junta de Andalucía); cada ficha enlaza con la página oficial de su estación. Y
+          el boletín diario de <a href="https://www.chguadalquivir.es/saih/Informes.aspx">SAIH de la
+          Confederación Hidrográfica del Guadalquivir</a>, que publica la acumulada del año
+          hidrológico de sus pluviómetros y de los embalses con pluviómetro. La cifra del mismo
+          periodo del año pasado <b>solo aparece en las estaciones de Hidrosur</b>: la publica
+          su página comparada, no el parte del Guadalquivir; cada red muestra lo que su fuente
+          ofrece.</li>
         <li><b>Previsión:</b> el modelo <a href="https://data.ecmwf.int/">ECMWF IFS 0.25°</a> (datos
           abiertos, CC BY 4.0), en su ciclo de medianoche. Se toma la celda de rejilla más cercana
           (~25 km): es una <b>estimación del modelo</b>, no la lectura de un pluviómetro.</li>
         <li><b>Mapa base:</b> © los colaboradores de
           <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>; sus teselas oficiales,
           atenuadas con un filtro CSS para que manden los datos.</li>
+        <li><b>Altitud:</b> la de las estaciones de Hidrosur es la que publica su propia ficha; los
+          puntos del Guadalquivir no traen altitud en su listado, así que la que se muestra es una
+          <b>altura del terreno estimada</b> (API de elevación de Open-Meteo), no una cota
+          topográfica oficial.</li>
       </ul>
       <p>La lluvia observada se refresca 4 veces al día; la previsión, <b>una vez al día</b>, sobre las
       07:30 UTC. La hora exacta y los días que abarca figuran al pie de la portada.</p>
-      <p class="hint">Proyecto personal e independiente, sin vínculo oficial con SAIH Hidrosur ni con
-      ECMWF.</p>
+      <p class="hint">Proyecto personal e independiente, sin vínculo oficial con Hidrosur, con la
+      Confederación Hidrográfica del Guadalquivir ni con ECMWF.</p>
     </div>
 
     <div class="i18n-en" hidden>
       <h2>About</h2>
-      <p><b>lloverllover</b> brings together, for every rain gauge station of the SAIH Hidrosur network
-      in southern Spain, the <b>forecast rainfall for the next 5 days</b> and the rain <b>accumulated in
-      the current hydrological year</b> (1 Oct – 30 Sep), set against the same period last year.</p>
+      <p><b>lloverllover</b> brings together, for every rain-gauge point of the two SAIH networks of
+      southern Spain —<b>Hidrosur</b> (Junta de Andalucía) and the <b>Guadalquivir</b> basin
+      authority's— the <b>forecast rainfall for the next 5 days</b> and the rain <b>accumulated in
+      the current hydrological year</b> (1 Oct – 30 Sep). That is <b>294 places</b>, each with a
+      municipality name — never a station code.</p>
 
       <h3>The bars</h3>
       <p>Five bars per station, one per day: the millimetres written inside each bar and the weekday
@@ -81,21 +93,28 @@
 
       <h3>The data</h3>
       <ul>
-        <li><b>Observed:</b> the comparative rainfall table of
+        <li><b>Observed:</b> two official networks. The comparative rainfall of
           <a href="https://www.redhidrosurmedioambiente.es/saih/resumen/precipitacion/comparada">SAIH
-          Hidrosur</a> (Guadalquivir River Basin Authority / Junta de Andalucía). The hydrological-year
-          accumulation is published by SAIH itself, and each card links to the station's official
-          page.</li>
+          Hidrosur</a> (Junta de Andalucía) — each card links to the station's official page — and
+          the daily bulletin of
+          <a href="https://www.chguadalquivir.es/saih/Informes.aspx">SAIH of the Guadalquivir
+          hydrographic confederation</a>, which publishes the hydrological-year accumulation of its
+          gauges and of its reservoirs that carry one. The same-period figure from last year is
+          <b>shown only for the Hidrosur stations</b>: their comparative page publishes it, the
+          Guadalquivir bulletin does not — each network shows exactly what its source offers.</li>
         <li><b>Forecast:</b> the <a href="https://data.ecmwf.int/">ECMWF IFS 0.25°</a> model (open
           data, CC BY 4.0), on its midnight cycle. It reads the nearest model-grid cell (~25 km): a
           <b>model estimate</b>, not a gauge reading.</li>
         <li><b>Basemap:</b> © the <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>
           contributors; official tiles, dimmed by a CSS filter so the data leads.</li>
+        <li><b>Altitude:</b> Hidrosur stations carry the figure their own listing publishes; the
+          Guadalquivir points list none, so the height shown for them is an <b>estimated terrain
+          height</b> (the Open-Meteo elevation API), not a surveyed benchmark.</li>
       </ul>
       <p>Observed rain refreshes 4 times a day; the forecast <b>once a day</b>, around 07:30 UTC. The
       exact time and the days it covers appear in the homepage footer.</p>
-      <p class="hint">A personal, independent project — not officially linked to SAIH Hidrosur or
-      ECMWF.</p>
+      <p class="hint">A personal, independent project — not officially linked to Hidrosur, to the
+      Guadalquivir confederation or to ECMWF.</p>
     </div>
   </main>
   <footer><p>lloverllover</p></footer>
