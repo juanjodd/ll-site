@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>lloverllover</title>
+  <meta name="description" content="Lluvia observada y prevista a 5 días en las estaciones del sur de España">
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+  <!-- ?v= is the cache-buster: bump it here (both files, and about.html) whenever the
+       CSS, JS or i18n.json changes, or a returning visitor keeps serving the old site
+       from the browser cache.  app.js reads this version back off its own tag. -->
+  <link rel="stylesheet" href="css/style.css?v=2.3.4">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>🌧️</text></svg>">
+</head>
+<body>
+  <!-- req. 9 (v2.3): one search, in the header, over EVERY place of the network —
+        including the dry ones the list below does not show.  v2.3.1: the field is shown
+        directly, no button; v2.3.2: it sits on the title line, top-right, beside the ES|EN
+        toggle, and its results drop down over the page (position:absolute). -->
+  <header>
+    <h1>llover<span>llover</span></h1>
+    <!-- top-right, before the language toggle; results (#qhits) float below so opening them
+         never reflows the header.  headerGap() keeps the video popup under this line. -->
+    <form id="qform" role="search" autocomplete="off">
+      <input id="q" type="search" placeholder="Buscar cualquier lugar…"
+             aria-label="Buscar lugar" data-i18n-ph="search_ph" data-i18n-aria="search_aria">
+      <ul id="qhits" aria-label="Coincidencias"></ul>
+    </form>
+    <nav id="lang" aria-label="Language">
+      <button data-lang="es">ES</button><button data-lang="en">EN</button>
+    </nav>
+    <p class="sub" data-i18n="tagline">Lluvia observada y prevista en el sur de España</p>
+    <p class="hy"><span data-i18n="hydro_year">Año hidrológico</span> <b id="hy">—</b></p>
+  </header>
+
+  <main>
+    <!-- The embed is in the HTML so it appears with no JavaScript at all.  app.js
+         lifts this block into #intro-pop on load; closing the popup takes the video
+         out of the page for good (src cleared, holder hidden).  The holder is hidden
+         against the flash of a large inline player before the script runs, and the
+         noscript rule below puts it back for browsers without JavaScript.
+         It autoplays MUTED in this markup, because that is the only kind of
+         autoplay a browser is guaranteed to allow: when YouTube's IFrame API loads
+         (see app.js) the player is rebuilt with sound at VOL (50 %), and if the
+         browser refuses that, it starts muted here and the first click or keypress
+         on the page restores the sound.  volume=50 is also what YouTube's own
+         speaker control opens at, for the case where the API is blocked. -->
+    <div id="intro-holder" hidden>
+      <section id="intro" class="intro">
+        <iframe id="video-frame" width="560" height="315"
+          src="https://www.youtube.com/embed/7plhOz-4UfQ?si=jWvkmPZA4V5KHviT&amp;controls=1&amp;start=4344&amp;end=4404&amp;autoplay=1&amp;mute=1&amp;volume=50&amp;loop=1&amp;playlist=7plhOz-4UfQ&amp;playsinline=1"
+          data-src="https://www.youtube.com/embed/7plhOz-4UfQ?si=jWvkmPZA4V5KHviT&amp;controls=1&amp;start=4344&amp;end=4404&amp;autoplay=1&amp;mute=1&amp;volume=50&amp;loop=1&amp;playlist=7plhOz-4UfQ&amp;playsinline=1"
+          title="Por qué lloverllover"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+        <!-- Fallback: browser tracking protection can block the embed entirely. -->
+        <p class="video-alt"><span data-i18n="video_blocked">¿No se ve?</span>
+          <a href="https://www.youtube.com/watch?v=7plhOz-4UfQ&amp;t=4344s" target=_blank
+             rel="noopener" data-i18n="video_open">Verlo en YouTube ↗</a></p>
+      </section>
+    </div>
+    <noscript><style>#intro-holder { display: block !important; }</style></noscript>
+    <div id="intro-pop" class="pop" hidden>
+      <div class="pop-card" id="intro-slot">
+        <button id="pop-close" class="pop-close" data-i18n-title="close" title="Cerrar">×</button>
+      </div>
+    </div>
+
+    <!-- v2.3 order: the place you are looking at FIRST (it is chosen for you on
+         arrival: nearest if the browser already knows where you are, otherwise the
+         wettest place of the forecast), then the map, then the list at the bottom.
+         (v2.3.1: the "Mi lugar más cercano" button is gone — the arrival already
+         centres on the nearest place whenever the browser has that permission.) -->
+    <section id="card"><p class="hint" data-i18n="select_hint">Toca un punto del mapa o un nombre de la lista</p></section>
+
+    <div id="map" role="img" aria-label="map"></div>
+    <div id="legend"></div>
+
+    <!-- req. 5: the live list of the places where rain is expected, at the bottom. -->
+    <section id="dir-section">
+      <h2 data-i18n="directory">Lluvia prevista, por provincia</h2>
+      <p class="hint" data-i18n="directory_hint">Litros esperados en los 5 días desde hoy. Solo los lugares con lluvia prevista; usa Buscar para cualquier otro.</p>
+      <div id="directory"></div>
+    </section>
+  </main>
+
+  <footer><p id="foot">…</p></footer>
+
+  <script src="vendor/leaflet/leaflet.js"></script>
+  <script src="js/app.js?v=2.3.4"></script>
+</body>
+</html>

@@ -1,0 +1,197 @@
+/* lloverllover — minimal bare design (plan req. 4). Mobile-first; system fonts. */
+* { box-sizing: border-box; }
+html { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif; }
+body { margin: 0; color: #1a1a1a; background: #fff; }
+h1 { font-size: 1.25rem; margin: 0; }
+h1 span { color: #4393c3; }  /* mid-tone of the marker ramp — quiet */
+h2 { font-size: 1rem; margin: .2rem 0; }
+a { color: #0b5fa5; }
+button { font: inherit; }
+
+header, footer, main > section, #legend { padding-left: .75rem; padding-right: .75rem; }
+header { display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem;
+  padding: .5rem .75rem; border-bottom: 1px solid #ddd; }
+header .sub { margin: 0; font-size: .8rem; color: #555; flex-basis: 100%; }
+header .hy { margin: 0; font-size: .8rem; }
+/* The top-right corner is one cluster: search field then ES|EN.  The auto margin on the
+   form pushes the pair right; the adjacent rule keeps them tight together.  On about.html
+   there is no form, so plain `#lang { margin-left: auto }` still right-aligns the toggle. */
+#qform { margin-left: auto; }
+#qform + #lang { margin-left: 0; }
+#lang { margin-left: auto; }
+#lang button { border: 1px solid #bbb; background: #fff; padding: .15rem .55rem; cursor: pointer; }
+#lang button:first-child { border-radius: .3rem 0 0 .3rem; }
+#lang button:last-child { border-radius: 0 .3rem .3rem 0; border-left: 0; }
+#lang button[aria-pressed="true"] { background: #1a1a1a; color: #fff; }
+
+#map { height: 52vh; width: 100%; }
+#legend { display: flex; flex-wrap: wrap; gap: .45rem; align-items: center;
+  font-size: .78rem; padding-top: .4rem; padding-bottom: .4rem; border-bottom: 1px solid #eee; }
+#legend b { margin-right: .25rem; }
+#legend span { display: inline-flex; align-items: center; gap: .25rem; }
+#legend i { width: .8rem; height: .8rem; border-radius: 50%; display: inline-block; }
+
+#card { border: 1px solid #ddd; border-radius: .5rem; margin: .5rem .75rem; padding: .6rem .8rem; }
+#card h2 { border-left: 6px solid #b0b8bf; padding-left: .5rem; }
+#card p { margin: .18rem 0; font-size: .95rem; }
+#card p.hl { font-weight: 600; margin-top: .45rem; }
+/* The card's last line (v2.3): province · altitude on the left, the Hidrosur ficha on
+   the right of the SAME line — Juanjo asked the link to sit beside the location info,
+   not in a paragraph of its own.  space-between pushes them apart; wrap keeps the phone
+   readable (the link drops below the place rather than squeezing the words). */
+#card .meta { display: flex; justify-content: space-between; align-items: baseline;
+  gap: .2rem .7rem; flex-wrap: wrap; margin: .4rem 0 .1rem; font-size: .8rem; color: #666; }
+#card .meta a { color: #1565c0; text-decoration: none; white-space: nowrap; }
+#card .meta a:hover { text-decoration: underline; }
+.leaflet-popup-content p { margin: .12rem 0; font-size: .85rem; }
+.leaflet-popup-content p.hl { font-weight: 600; margin-top: .35rem; }
+.hint { color: #666; font-size: .8rem; margin: .2rem 0; }
+
+/* Quiet basemap (req. 2): the TILES are muted, never the markers. Adjust these
+   numbers only — markers/legend/dots keep their full colour. */
+.leaflet-tile-pane { filter: grayscale(.85) brightness(1.1) contrast(.88) opacity(.8); }
+
+#dir-section { border-top: 1px solid #eee; margin-top: .9rem; padding-top: .5rem; }
+#dir-section h2 { margin-top: .3rem; }
+
+/* One search for the whole network (req. 9): a box shown directly — no button (v2.3.1) —
+   sitting TOP-RIGHT on the title line, just left of ES|EN (v2.3.2).  It finds every place,
+   dry ones included (the directory only lists the wet ones).  The results DROP DOWN over
+   the page (`position:absolute` + a z-index above the video popup's 1200), so opening them
+   stretches nothing and moves nothing below; headerGap() still measures the header for the
+   video.  On a phone the field is the elastic part: `min(17rem, 33vw)` is sized so the
+   title (128 px), the field, ES|EN (81 px) and two 8 px gaps still fit one 375 px line. */
+#qform { position: relative; display: flex; align-items: center; min-width: 0; }
+#q { width: min(17rem, 33vw); min-width: 0; padding: .3rem .5rem; font: inherit;
+  font-size: .92rem; border: 1px solid #bbb; border-radius: .4rem; }
+#qhits { position: absolute; top: calc(100% + .25rem); right: 0; z-index: 1300;
+  min-width: 17rem; max-width: min(26rem, calc(100vw - 1.5rem)); max-height: 55vh;
+  overflow-y: auto; box-shadow: 0 6px 18px rgba(0, 0, 0, .16);
+  list-style: none; margin: 0; padding: .1rem 0; border: 1px solid #ddd;
+  border-radius: .4rem; background: #fff; }
+#qhits:empty { display: none; }
+#qhits li { display: flex; align-items: center; gap: .35rem; padding: .28rem .5rem;
+  font-size: .85rem; cursor: pointer; }
+#qhits li:hover, #qhits li[aria-selected="true"] { background: #eef6fb; }
+#qhits li.qnone { cursor: default; color: #666; font-size: .82rem; }
+#qhits .dot { width: .5rem; height: .5rem; border-radius: 50%; flex: none;
+  border: 1px solid rgba(0, 0, 0, .12); }
+#qhits .nm { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; }
+#qhits .pr { flex: none; color: #666; font-size: .75rem; }
+#qhits .val { flex: none; font-size: .78rem; color: #555; font-variant-numeric: tabular-nums; }
+/* Small phones (≤440 px): trim the header's air so title + field + ES|EN still share the
+   title line — below that it wraps to a row of its own, which still looks right. */
+@media (max-width: 440px) {
+  header { gap: .35rem; }
+  #q { width: min(17rem, 30vw); }
+  #lang button { padding: .15rem .45rem; }
+}
+/* Directory (req. 5): compact multi-column list — one line per place, forecast in
+   brackets, up to four columns.  The breakpoints are set by what a PLACE NAME needs:
+   below 560 px two columns would ellipsize "Embalse de Conde..." to nonsense, so a
+   phone gets one readable line per place and the columns start on a tablet. */
+#directory details { margin: .25rem 0; }
+#directory details.prov > summary { font-weight: 600; }
+#directory summary { cursor: pointer; font-size: .88rem; padding: .2rem 0;
+  display: flex; align-items: center; gap: .4rem; list-style: none; }
+#directory summary::-webkit-details-marker { display: none; }
+#directory summary::before { content: "▸"; color: #999; flex: none; font-size: .75rem; }
+#directory details[open] > summary::before { content: "▾"; }
+#directory ul { list-style: none; margin: 0; padding: 0; columns: 1; column-gap: 1rem; }
+@media (min-width: 560px) { #directory ul { columns: 2; } }
+@media (min-width: 820px) { #directory ul { columns: 3; } }
+@media (min-width: 1180px) { #directory ul { columns: 4; } }
+#directory li[data-n] { display: flex; align-items: center; gap: .3rem;
+  break-inside: avoid; padding: .16rem .2rem; border-bottom: 1px solid #f2f2f2;
+  font-size: .82rem; cursor: pointer; }
+#directory .dot { width: .5rem; height: .5rem; border-radius: 50%; flex: none;
+  border: 1px solid rgba(0, 0, 0, .12); }
+#directory .nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#directory .val { flex: none; font-size: .74rem; color: #555;
+  font-variant-numeric: tabular-nums; }
+
+footer { border-top: 1px solid #ddd; margin-top: 1.2rem; padding: .6rem .75rem; }
+footer p { font-size: .75rem; color: #555; }
+
+/* The tiny 5-day bar plot (req. 3, v2.2) — plain CSS boxes, no new dependency.
+   One column per forecast day: a fixed-height track with the bar bottom-aligned,
+   the amount INSIDE a tall bar (white) or just above a short one (dark), and the
+   weekday initial as the baseline.  Heights are logarithmic (barFrac in app.js),
+   so one 30 l day does not flatten the rest of the week. */
+.fcbars { display: inline-flex; align-items: flex-end; gap: .3rem; }
+.fcbars .fcday { display: flex; flex-direction: column; align-items: center; }
+/* the bar is sized so that the WIDEST number it may have to hold ("16,1") fits
+   inside it: a white label overflowing a narrow bar would vanish on white */
+.fcbars .fctrack { position: relative; width: 1.32rem; height: 2.5rem; }
+.fcbars .fbar { position: absolute; bottom: 0; left: 0; right: 0; min-height: 2px;
+  border-radius: 2px 2px 0 0; }
+.fcbars .fbar b { position: absolute; left: 50%; transform: translateX(-50%);
+  font-size: .56rem; font-weight: 600; line-height: 1; white-space: nowrap;
+  font-variant-numeric: tabular-nums; }
+.fcbars .fbar.in b { top: 2px; color: #fff; }
+.fcbars .fbar.out b { bottom: 100%; color: #444; font-weight: 500; padding-bottom: 1px; }
+.fcbars .fcwd { font-size: .58rem; font-weight: 500; color: #777; line-height: 1;
+  border-top: 1px solid #ccc; margin-top: 2px; padding: .14rem .1rem 0; }
+.fcday.now .fcwd { color: #08519c; font-weight: 700; }      /* today's column */
+#card .fcbars .fctrack { width: 1.9rem; height: 3.2rem; }  /* a little larger in the card */
+#card .fcbars .fbar b { font-size: .66rem; }
+#card .fcbars .fcwd { font-size: .68rem; }
+/* The quantity lines (req. 3, v2.3): each line is a number cell and a words cell.  The
+   number is right-aligned inside a box as wide as the widest number of that place
+   (`--qw`, set by detailLines in `ch` = tabular digits), so the lines line up **by their
+   last digit** — 185,6 over 28,8 over 4,3 — and every line of words starts at the same x.
+   The digits are tabular so they really are equal width; the leading space of the words
+   cell is dropped by CSS at the start of a line and exists only for copy-paste.
+   `q` and both of its cells stay the same font size in the number column: a smaller `b`
+   would shrink its own `ch` and break the flush edge (only the words may differ). */
+.q { display: block; margin: .28rem 0 .12rem; }
+.q .qrow { display: flex; align-items: baseline; gap: .3rem; margin: .1rem 0; }
+.q .qrow b { flex: none; width: var(--qw, 4ch); text-align: right; font-weight: 600;
+  font-variant-numeric: tabular-nums; white-space: pre; }
+.q .qrow i { font-style: normal; min-width: 0; }
+.q .tot i { font-size: .9em; color: #555; }
+#card .q { font-size: .95rem; }
+.leaflet-popup-content .q { font-size: .85rem; }
+
+/* The intro block (req. 8): app.js lifts this element into the popup below on
+   load, and closing the popup takes it out of the page for good — so the inline
+   copy is only ever what a browser with no JavaScript sees (see #intro-holder). */
+.intro { margin: .6rem .75rem; border: 1px solid #ddd; border-radius: .5rem; padding: .1rem .8rem; }
+.intro iframe { display: block; margin: .6rem auto .2rem; width: 100%; max-width: 720px;
+  /* the slash is mandatory: `aspect-ratio: 16 9` is dropped by Firefox, which left
+     the player at the UA default 150px tall — a thin strip with bars at the sides */
+  aspect-ratio: 16 / 9; height: auto; min-height: 0; border: 0; }
+.video-alt { font-size: .75rem; color: #666; margin: .2rem 0 .6rem; }
+
+/* Popup: the same block, centred over the page and as BIG as the screen allows.
+   It must never cover the page title, so it starts BELOW the header: `--head` is
+   the real header height, measured by app.js (headerGap), with a CSS fallback for
+   browsers without scripts.  The card's width is capped by the space left under
+   that header × 16/9, so the player fills the screen without being cropped or
+   letterboxed — portrait or landscape. */
+.pop { position: fixed; inset: var(--head, 4.6rem) 0 0 0; z-index: 1200;
+  display: grid; place-items: center; box-sizing: border-box; padding: .4rem;
+  overflow: auto; background: rgba(22, 26, 30, .62); }
+.pop[hidden] { display: none; }
+body.pop-open { overflow: hidden; }        /* the page waits; nothing slides aside */
+.pop-card { position: relative; background: #fff; border-radius: .6rem;
+  box-sizing: border-box; padding: 1.5rem .5rem .35rem;
+  width: min(calc(100vw - .8rem), calc((100vh - var(--head, 4.6rem) - 4.6rem) * 16 / 9));
+  width: min(calc(100vw - .8rem), calc((100dvh - var(--head, 4.6rem) - 4.6rem) * 16 / 9)); }
+.pop-card .intro { margin: 0; border: 0; padding: 0; border-radius: 0; }
+.pop-card .intro iframe { max-width: 100%; margin-left: 0; }
+.pop-close { position: absolute; top: .1rem; right: .2rem; border: 0; background: none;
+  font-size: 1.5rem; line-height: 1; padding: .35rem .5rem; cursor: pointer; color: #666; }
+.pop-close:hover { color: #1a1a1a; }
+.ratio { position: relative; aspect-ratio: 16 / 9; }
+.ratio iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+
+.prose { max-width: 46rem; line-height: 1.55; }
+.prose h2 { font-size: 1.15rem; margin-top: 1.2rem; }
+.prose h3 { font-size: .95rem; margin-top: 1rem; }
+
+@media (min-width: 48rem) {
+  #map { height: 62vh; }
+  #card { margin: .75rem 0; }
+}

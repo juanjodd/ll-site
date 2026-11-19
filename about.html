@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Acerca de — lloverllover</title>
+  <link rel="stylesheet" href="css/style.css?v=2.3.4">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>🌧️</text></svg>">
+</head>
+<body>
+  <header>
+    <h1>llover<span>llover</span></h1>
+    <nav id="lang" aria-label="Language">
+      <button data-lang="es">ES</button><button data-lang="en">EN</button>
+    </nav>
+  </header>
+  <main class="prose">
+    <p><a href="index.html" class="i18n-es">← Volver al mapa</a>
+       <a href="index.html" class="i18n-en" hidden>← Back to the map</a></p>
+
+    <div class="i18n-es">
+      <h2>Acerca de</h2>
+      <p><b>lloverllover</b> reúne, para cada estación pluviométrica de la red SAIH Hidrosur en el sur
+      de España, la <b>lluvia prevista los próximos 5 días</b> y la <b>acumulada en el año
+      hidrológico</b> en curso (1 oct – 30 sep), cotejada con el mismo periodo del año pasado.</p>
+
+      <h3>Las barras</h3>
+      <p>Cinco barras por estación, una por día: los litros dentro de cada barra y la inicial de la
+      jornada debajo (L M M J V S D), a partir de hoy. La altura es <b>logarítmica</b>: un día de 16
+      litros no borra a los demás y una semana casi seca conserva sus matices; un día sin lluvia queda
+      como un resto gris con su <b>0</b>. El punto del mapa, la cifra entre paréntesis de la lista y
+      «X litros previstos en 5 días» son <b>el mismo número</b>. Hablamos de <b>litros</b>: litros por
+      metro cuadrado, que es exactamente un milímetro de lluvia.</p>
+
+      <h3>Vídeo de presentación (1 min)</h3>
+      <div class="ratio"><iframe src="https://www.youtube.com/embed/7plhOz-4UfQ?si=jWvkmPZA4V5KHviT&amp;controls=1&amp;start=4344&amp;end=4404"
+        title="Por qué lloverllover"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>
+      <p><a href="https://www.youtube.com/watch?v=7plhOz-4UfQ&amp;t=4344s">Ver el fragmento en YouTube ↗</a></p>
+
+      <h3>Los datos</h3>
+      <ul>
+        <li><b>Observado:</b> la precipitación comparada del
+          <a href="https://www.redhidrosurmedioambiente.es/saih/resumen/precipitacion/comparada">SAIH Hidrosur</a>
+          (Confederación Hidrográfica del Guadalquivir / Junta de Andalucía). El acumulado del año
+          hidrológico lo publica el propio SAIH, y cada ficha enlaza con la página oficial de su
+          estación.</li>
+        <li><b>Previsión:</b> el modelo <a href="https://data.ecmwf.int/">ECMWF IFS 0.25°</a> (datos
+          abiertos, CC BY 4.0), en su ciclo de medianoche. Se toma la celda de rejilla más cercana
+          (~25 km): es una <b>estimación del modelo</b>, no la lectura de un pluviómetro.</li>
+        <li><b>Mapa base:</b> © los colaboradores de
+          <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>; sus teselas oficiales,
+          atenuadas con un filtro CSS para que manden los datos.</li>
+      </ul>
+      <p>La lluvia observada se refresca 4 veces al día; la previsión, <b>una vez al día</b>, sobre las
+      07:30 UTC. La hora exacta y los días que abarca figuran al pie de la portada.</p>
+      <p class="hint">Proyecto personal e independiente, sin vínculo oficial con SAIH Hidrosur ni con
+      ECMWF.</p>
+    </div>
+
+    <div class="i18n-en" hidden>
+      <h2>About</h2>
+      <p><b>lloverllover</b> brings together, for every rain gauge station of the SAIH Hidrosur network
+      in southern Spain, the <b>forecast rainfall for the next 5 days</b> and the rain <b>accumulated in
+      the current hydrological year</b> (1 Oct – 30 Sep), set against the same period last year.</p>
+
+      <h3>The bars</h3>
+      <p>Five bars per station, one per day: the millimetres written inside each bar and the weekday
+      initial beneath it (M T W T F S S), starting today. Heights are <b>logarithmic</b> — a 16 mm day
+      never wipes out the rest and a nearly dry week keeps its shades — while a rainless day stays a
+      small grey stub with its <b>0</b>. The dot on the map, the figure in brackets in the list and the
+      “X mm forecast over 5 days” total are <b>the same number</b>.</p>
+
+      <h3>Intro video (1 min)</h3>
+      <div class="ratio"><iframe src="https://www.youtube.com/embed/7plhOz-4UfQ?si=jWvkmPZA4V5KHviT&amp;controls=1&amp;start=4344&amp;end=4404"
+        title="Why lloverllover"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>
+      <p><a href="https://www.youtube.com/watch?v=7plhOz-4UfQ&amp;t=4344s">Watch the fragment on YouTube ↗</a></p>
+
+      <h3>The data</h3>
+      <ul>
+        <li><b>Observed:</b> the comparative rainfall table of
+          <a href="https://www.redhidrosurmedioambiente.es/saih/resumen/precipitacion/comparada">SAIH
+          Hidrosur</a> (Guadalquivir River Basin Authority / Junta de Andalucía). The hydrological-year
+          accumulation is published by SAIH itself, and each card links to the station's official
+          page.</li>
+        <li><b>Forecast:</b> the <a href="https://data.ecmwf.int/">ECMWF IFS 0.25°</a> model (open
+          data, CC BY 4.0), on its midnight cycle. It reads the nearest model-grid cell (~25 km): a
+          <b>model estimate</b>, not a gauge reading.</li>
+        <li><b>Basemap:</b> © the <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>
+          contributors; official tiles, dimmed by a CSS filter so the data leads.</li>
+      </ul>
+      <p>Observed rain refreshes 4 times a day; the forecast <b>once a day</b>, around 07:30 UTC. The
+      exact time and the days it covers appear in the homepage footer.</p>
+      <p class="hint">A personal, independent project — not officially linked to SAIH Hidrosur or
+      ECMWF.</p>
+    </div>
+  </main>
+  <footer><p>lloverllover</p></footer>
+  <script>
+    /* tiny language toggle for the static about page (no app.js here) */
+    const setLang = (l) => {
+      document.documentElement.lang = l;
+      for (const e of document.querySelectorAll(".i18n-es")) e.hidden = l !== "es";
+      for (const e of document.querySelectorAll(".i18n-en")) e.hidden = l !== "en";
+      for (const b of document.querySelectorAll("#lang button"))
+        b.setAttribute("aria-pressed", String(b.dataset.lang === l));
+      localStorage.setItem("llo_lang", l);
+    };
+    for (const b of document.querySelectorAll("#lang button"))
+      b.addEventListener("click", () => setLang(b.dataset.lang));
+    setLang(localStorage.getItem("llo_lang") || "es");
+  </script>
+</body>
+</html>
