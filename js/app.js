@@ -163,7 +163,7 @@ async function selectByLocation() {
   const near = nearest(here.lat, here.lon);
   /* v2.4: only upgrade when that nearest place is genuinely close by; at 300 km
      the wettest-place default carries more useful weather than a distant "near" */
-  if (near.d <= NEAR_MAX_KM) select(near.s, true, false);
+  if (near.d <= NEAR_MAX_KM) focusPlace(near.s, false);   // and refocus the arrival
 }
 
 /* ---------- rendering ---------- */
@@ -246,7 +246,7 @@ function renderCard(st) {
   const link = st.url
     ? `<a href="${st.url}" target=_blank rel="noopener" class=hidro>${t("station_link")}</a>` : "";
   $("#card").innerHTML = `
-    <h2 style="border-color:${col}">${st.name}</h2>
+    <h2 class=goto tabindex=0 role=button title="${t("goto_hint")}" style="border-color:${col}">${st.name}</h2>
     ${detailLines(st)}
     <p class="meta">${where}${link}</p>`;
 }
@@ -417,14 +417,16 @@ function select(st, pan = false, scroll = pan) {
   if (scroll) $("#card").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-/* Chosen from the LIST (or the search results): zoom onto the place, open its
-   balloon, and bring the map into view (v2.4, req. 6).  The marker tap does NOT
-   call this — a tap just opens the balloon where it is. */
-function focusPlace(st) {
+/* Chosen from the LIST (or the search results, or the card's name): zoom onto the
+   place, open its balloon, and bring the map into view (v2.4, req. 6).  The marker
+   tap does NOT call this — a tap just opens the balloon where it is.  `scroll=false`
+   focuses without touching the reader's own page scroll — that is how the ARRIVAL
+   opens (v2.4.2): the default place is zoomed and ballooned, the page stays on top. */
+function focusPlace(st, scroll = true) {
   if (!st) return;
   select(st, true, false);
   if (markers[st.n]) markers[st.n].openPopup();
-  $("#map").scrollIntoView({ behavior: "smooth", block: "center" });
+  if (scroll) $("#map").scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
 /* ---------- init ---------- */
@@ -468,12 +470,27 @@ async function boot() {
 
   renderDirectory();
   wireSearch();
-  /* The page never opens on an empty card (req. 10): it selects the wettest place, but
-     with pan=false — NO zoom and no scroll on arrival.  The reader first sees the whole
-     region with one marker emphasised; zooming in on a place they never asked to open
-     would hide every other dot.  Only an ACTUAL pick (marker, row or search) zooms. */
+  /* The page never opens on an empty card (req. 10): the default is still the wettest
+     place — upgraded to the nearest one if the reader already granted location (req. 7).
+     v2.4.2 (Juanjo): the arrival now opens FOCUSED on it, zoom + balloon, exactly like
+     a list pick — but `scroll=false`: the page does not jump under the reader, the
+     map pans only inside itself, and the whole region was fitted first. */
   select(wettestPlace(), false, false);
-  selectByLocation();                    // upgrades to the nearest place if already allowed
+  focusPlace(selected, false);
+  selectByLocation();                    // upgrades (and refocuses) if already allowed
+
+  /* v2.4.2: the card's NAME is the same "take me there" gesture as a list pick —
+     click (or Enter/Space on the focused heading) zooms and opens its balloon.
+     Delegated on #card because renderCard() rewrites the heading on every select. */
+  $("#card").addEventListener("click", e => {
+    if (e.target.closest("h2.goto") && selected) focusPlace(selected);
+  });
+  $("#card").addEventListener("keydown", e => {
+    if (e.target.closest("h2.goto") && selected && (e.key === "Enter" || e.key === " ")) {
+      e.preventDefault();
+      focusPlace(selected);
+    }
+  });
 
   $$("#lang button").forEach(b => b.addEventListener("click", () => {
     LANG = b.dataset.lang; localStorage.setItem("llo_lang", LANG);

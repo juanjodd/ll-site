@@ -33,6 +33,10 @@ header .hy { margin: 0; font-size: .8rem; }
 
 #card { border: 1px solid #ddd; border-radius: .5rem; margin: .5rem .75rem; padding: .6rem .8rem; }
 #card h2 { border-left: 6px solid #b0b8bf; padding-left: .5rem; }
+/* v2.4.2: the card's place name is a "take me there" control (focusPlace) —
+   pointer + a light dotted underline say so without shouting over the number. */
+#card h2.goto { cursor: pointer; }
+#card h2.goto:hover, #card h2.goto:focus { text-decoration: underline dotted; }
 #card p { margin: .18rem 0; font-size: .95rem; }
 #card p.hl { font-weight: 600; margin-top: .45rem; }
 /* The card's last line (v2.3): province · altitude on the left, the Hidrosur ficha on
