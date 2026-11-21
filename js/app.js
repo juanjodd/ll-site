@@ -163,7 +163,9 @@ async function selectByLocation() {
   const near = nearest(here.lat, here.lon);
   /* v2.4: only upgrade when that nearest place is genuinely close by; at 300 km
      the wettest-place default carries more useful weather than a distant "near" */
-  if (near.d <= NEAR_MAX_KM) focusPlace(near.s, false);   // and refocus the arrival
+  /* v3.2: the same rule as the arrival — CHOOSE it (card + emphasised marker), but open
+     nothing and pan nowhere.  A visitor landing on their own place is not owed a popup. */
+  if (near.d <= NEAR_MAX_KM) select(near.s, false, false);
 }
 
 /* ---------- rendering ---------- */
@@ -189,10 +191,50 @@ function headerGap() {
   document.documentElement.style.setProperty("--head", (px || 74) + "px");
 }
 
+/* The legend, and the RANGE behind each word (v3.1): hover a chip and a balloon says
+   "5 – 20 l previstos en 5 días".  Two rules keep this honest:
+   (a) the numbers are read back out of BANDS — the very table fcColor() paints from — so a
+       label can never promise a band the map does not actually draw;
+   (b) the text always says 5 DÍAS, because these bands are a FIVE-DAY total.  They are NOT
+       AEMET's 24-hour categories, and a reader who knows AEMET will look for them here. */
+const bandNum = (v) => num(v, v < 1 ? 2 : 1);      // 0,05 must not round to 0,1
+function bandRange(i) {
+  const u = t("litre_short");
+  const hi = i + 1 < BANDS.length ? BANDS[i + 1][0] : null;
+  if (hi === null) return t("range_over", bandNum(BANDS[i][0]), u);
+  if (i === 0) return t("range_under", bandNum(hi), u);
+  return `${bandNum(BANDS[i][0])} – ${bandNum(hi)} ${u}`;
+}
+
 function renderLegend() {
+  const days = fcDates().length;
   $("#legend").innerHTML = `<b>${t("legend_title")}</b>` +
-    BANDS.map(([lo, key]) =>
-      `<span><i style="background:${fcColor(lo + 0.01)}"></i>${t(key)}</span>`).join("");
+    BANDS.map(([lo, key], i) => {
+      const range = `${bandRange(i)} ${t("in_days", days)}`;
+      return `<span class=chip tabindex=0 title="${range}">` +
+        `<i style="background:${fcColor(lo + 0.01)}"></i>${t(key)}` +
+        `<em class=range>${range}</em></span>`;
+    }).join("");
+  /* A native title tooltip is a MOUSE thing, and this page is read on phones (req. 9), so
+     v3.2 adds the same range as a bubble that a TAP (or Enter/Space, or keyboard focus)
+     reveals — one open at a time, closed by tapping again or moving away.  No `:hover` rule
+     shows it: on a desktop the title already speaks, and two tooltips for one word is noise. */
+  $$("#legend .chip").forEach(chip => {
+    const toggle = () => {
+      const was = chip.classList.contains("open");
+      $$("#legend .chip.open").forEach(o => o.classList.remove("open"));
+      if (!was) chip.classList.add("open");
+    };
+    chip.addEventListener("click", toggle);
+    chip.addEventListener("keydown", e => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); }
+      else if (e.key === "Escape" && chip.classList.contains("open")) {
+        chip.classList.remove("open");
+        e.stopPropagation();          // the bubble was the topmost thing: don't also shut the video
+      }
+    });
+    chip.addEventListener("blur", () => chip.classList.remove("open"));
+  });
 }
 
 /* The detail lines (req. 3, v2.3 / v2.4 / v2.4.1): as few words as possible, no station
@@ -282,9 +324,12 @@ function renderDirectory() {
         <ul>${list.map(row).join("")}</ul></details>`);
 
   $("#directory").innerHTML = provHtml.join("");
+  /* v3.1: a row means "show me this place" — the CARD is the answer (it is the full
+     version of the balloon), so the page goes up to it and no balloon opens over the map. */
   $$("#directory li[data-n]").forEach(li =>
     li.addEventListener("click", () =>
-      focusPlace(DATA.stations.find(s => s.n === +li.dataset.n))));
+      focusPlace(DATA.stations.find(s => s.n === +li.dataset.n),
+        { scroll: "card", balloon: false })));
 }
 
 /* ---------- search: every place of the network, rain or none (req. 9, v2.3) ----------
@@ -348,7 +393,9 @@ const stOf = (n) => DATA.stations.find(s => s.n === n);
 function choosePlace(st) {
   if (!st) return;
   clearSearch();                   // close the dropdown; the box is ready for the next look
-  focusPlace(st);                  // a picked place behaves like a directory row (v2.4)
+  /* v3.1 (Juanjo): a search pick marks the place and fills the card — which sits right
+     under this header — but it never scrolls the page and never opens a balloon. */
+  focusPlace(st, { scroll: null, balloon: false });
 }
 
 function wireSearch() {
@@ -388,7 +435,7 @@ function renderFooter() {
   const m = DATA.models[MODEL_ACTIVE];
   const span = fcWindowLabel() ? ` · ${fcWindowLabel()}` : "";
   const [hyA, hyB] = DATA.hydro_year.split("/");
-  $("#hy").textContent = `${hyA}/${hyB.slice(2)}`;
+  $("#hy").textContent = `${hyA}/${hyB}`;        // v3.1: the header says 2026/2027, not 2026/27
   $("#foot").innerHTML = `
     ${t("updated")}: <b>${DATA.generated_at_utc.replace("T", " ").replace("Z", " UTC")}</b>
     ${m ? ` · ${t("model")}: ${m.product}, ${t("cycle")} ${m.cycle_utc}${span}` : ""}
@@ -417,16 +464,24 @@ function select(st, pan = false, scroll = pan) {
   if (scroll) $("#card").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-/* Chosen from the LIST (or the search results, or the card's name): zoom onto the
-   place, open its balloon, and bring the map into view (v2.4, req. 6).  The marker
-   tap does NOT call this — a tap just opens the balloon where it is.  `scroll=false`
-   focuses without touching the reader's own page scroll — that is how the ARRIVAL
-   opens (v2.4.2): the default place is zoomed and ballooned, the page stays on top. */
-function focusPlace(st, scroll = true) {
+/* Chosen from the LIST, the SEARCH box or the card's own name.  v3.1 (Juanjo) splits the
+   two things that used to travel together — moving the page, and opening the balloon:
+     scroll: "card" → bring the selected-place card to the top of the screen (a directory row)
+     scroll: "map"  → bring the MAP to the middle (the card's name: "ver en el mapa")
+     scroll: null   → leave the page exactly where the reader put it (a search pick, arrival)
+     balloon: open the popup.  A place you PICKED is already spelled out in the card, so the
+              row and the search no longer throw a balloon over the map for the same numbers;
+              the card's name and the arrival keep it, because there it is the reward for
+              having gone to the map.
+   Either way the marker is emphasised and the map CENTRES on it inside its own box (`select`
+   pans), so the dot is sitting there waiting whenever the reader scrolls down. */
+function focusPlace(st, { scroll = "map", balloon = true } = {}) {
   if (!st) return;
   select(st, true, false);
-  if (markers[st.n]) markers[st.n].openPopup();
-  if (scroll) $("#map").scrollIntoView({ behavior: "smooth", block: "center" });
+  if (balloon && markers[st.n]) markers[st.n].openPopup();
+  if (!scroll) return;
+  const el = $(scroll === "card" ? "#card" : "#map");
+  el.scrollIntoView({ behavior: "smooth", block: scroll === "map" ? "center" : "start" });
 }
 
 /* ---------- init ---------- */
@@ -462,6 +517,7 @@ async function boot() {
          exactly where the reader left it — no zoom on marker select. */
       .on("click", () => select(st, false, false));
   }
+
   map.fitBounds(HOME, { padding: [12, 12] });
 
   /* v2.4: closing a balloon NO LONGER retreats the map to the whole region (the
@@ -470,14 +526,15 @@ async function boot() {
 
   renderDirectory();
   wireSearch();
-  /* The page never opens on an empty card (req. 10): the default is still the wettest
-     place — upgraded to the nearest one if the reader already granted location (req. 7).
-     v2.4.2 (Juanjo): the arrival now opens FOCUSED on it, zoom + balloon, exactly like
-     a list pick — but `scroll=false`: the page does not jump under the reader, the
-     map pans only inside itself, and the whole region was fitted first. */
+  /* The page never opens on an empty card (req. 7): the default is the wettest place —
+     upgraded to the nearest one if the reader already granted location.
+     v3.2 (Juanjo: "revert the functionality that opens the wettest bubble the first time"):
+     arriving only CHOOSES the place.  The card up top is filled, its marker is the
+     emphasised one, and NOTHING opens or moves over the map — the region view the page
+     fitted stays exactly as it is.  The balloon is now something the reader asks for:
+     a tap on a marker, or a tap on the card's own name. */
   select(wettestPlace(), false, false);
-  focusPlace(selected, false);
-  selectByLocation();                    // upgrades (and refocuses) if already allowed
+  selectByLocation();                    // upgrades to the nearest place, if already allowed
 
   /* v2.4.2: the card's NAME is the same "take me there" gesture as a list pick —
      click (or Enter/Space on the focused heading) zooms and opens its balloon.

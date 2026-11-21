@@ -11,8 +11,13 @@ button { font: inherit; }
 header, footer, main > section, #legend { padding-left: .75rem; padding-right: .75rem; }
 header { display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem;
   padding: .5rem .75rem; border-bottom: 1px solid #ddd; }
-header .sub { margin: 0; font-size: .8rem; color: #555; flex-basis: 100%; }
-header .hy { margin: 0; font-size: .8rem; }
+/* v3.1: ONE subtitle line replaces the two paragraphs it used to be, so the header is a row
+   shorter and nothing else moved.  v3.2: space-between puts the hydrological year FLUSH RIGHT
+   on the same line; when a phone cannot hold both it wraps, and the year stays at the right
+   edge of its own row — where a date belongs anyway. */
+header .sub { margin: 0; font-size: .8rem; color: #555; flex-basis: 100%;
+  display: flex; justify-content: space-between; align-items: baseline; gap: .1rem .9rem; }
+header .sub .hy { flex: none; }
 /* The top-right corner is one cluster: search field then ES|EN.  The auto margin on the
    form pushes the pair right; the adjacent rule keeps them tight together.  On about.html
    there is no form, so plain `#lang { margin-left: auto }` still right-aligns the toggle. */
@@ -28,7 +33,20 @@ header .hy { margin: 0; font-size: .8rem; }
 #legend { display: flex; flex-wrap: wrap; gap: .45rem; align-items: center;
   font-size: .78rem; padding-top: .4rem; padding-bottom: .4rem; border-bottom: 1px solid #eee; }
 #legend b { margin-right: .25rem; }
-#legend span { display: inline-flex; align-items: center; gap: .25rem; }
+/* v3.1: every chip knows its own range.  v3.2: it also SHOWS it without a mouse — a tap (or
+   Enter/Space) opens the bubble below.  A native `title` covers the desktop pointer, and the
+   `:focus`/`.open` rules cover touch and keyboard; `:hover` deliberately shows nothing, so a
+   desktop reader never gets two tooltips stacked on one word. */
+#legend span { display: inline-flex; align-items: center; gap: .25rem; cursor: help;
+  position: relative; }
+#legend .chip:focus { outline: 1px dotted #999; outline-offset: 2px; }
+#legend .range { position: absolute; left: 0; top: calc(100% + .4rem); z-index: 1100;
+  display: none; padding: .3rem .5rem; border-radius: .35rem; background: #1a1a1a;
+  color: #fff; font-size: .72rem; line-height: 1.35; font-style: normal;
+  white-space: nowrap; box-shadow: 0 4px 12px rgba(0, 0, 0, .22); }
+#legend .chip.open .range, #legend .chip:focus .range { display: block; }
+/* the last chip would otherwise hang its bubble off the right edge of a phone */
+#legend span:last-child .range { left: auto; right: 0; }
 #legend i { width: .8rem; height: .8rem; border-radius: 50%; display: inline-block; }
 
 #card { border: 1px solid #ddd; border-radius: .5rem; margin: .5rem .75rem; padding: .6rem .8rem; }
@@ -191,7 +209,10 @@ body.pop-open { overflow: hidden; }        /* the page waits; nothing slides asi
 .ratio { position: relative; aspect-ratio: 16 / 9; }
 .ratio iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
 
-.prose { max-width: 46rem; line-height: 1.55; }
+/* about.html is a text page: `prose` is the measure, and it needs the
+   same .75rem gutter the rest of the site uses — otherwise a phone puts the paragraph
+   hard against the edge of the screen. */
+.prose { max-width: 46rem; line-height: 1.55; padding-left: .75rem; padding-right: .75rem; }
 .prose h2 { font-size: 1.15rem; margin-top: 1.2rem; }
 .prose h3 { font-size: .95rem; margin-top: 1rem; }
 

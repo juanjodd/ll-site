@@ -9,7 +9,7 @@
   <!-- ?v= is the cache-buster: bump it here (both files, and about.html) whenever the
        CSS, JS or i18n.json changes, or a returning visitor keeps serving the old site
        from the browser cache.  app.js reads this version back off its own tag. -->
-  <link rel="stylesheet" href="css/style.css?v=3.0">
+  <link rel="stylesheet" href="css/style.css?v=3.4">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>🌧️</text></svg>">
 </head>
 <body>
@@ -22,15 +22,21 @@
     <!-- top-right, before the language toggle; results (#qhits) float below so opening them
          never reflows the header.  headerGap() keeps the video popup under this line. -->
     <form id="qform" role="search" autocomplete="off">
-      <input id="q" type="search" placeholder="Buscar cualquier lugar…"
+      <!-- v3.1: the field says just "Buscar" (Juanjo).  What it searches is still said
+           out loud to a screen reader by aria-label, and shown once you start typing. -->
+      <input id="q" type="search" placeholder="Buscar"
              aria-label="Buscar lugar" data-i18n-ph="search_ph" data-i18n-aria="search_aria">
       <ul id="qhits" aria-label="Coincidencias"></ul>
     </form>
     <nav id="lang" aria-label="Language">
       <button data-lang="es">ES</button><button data-lang="en">EN</button>
     </nav>
-    <p class="sub" data-i18n="tagline">Lluvia observada y prevista en el sur de España</p>
-    <p class="hy"><span data-i18n="hydro_year">Año hidrológico</span> <b id="hy">—</b></p>
+    <!-- v3.1: ONE subtitle line for the tagline and the hydrological year (the number is
+         still filled in by renderFooter(), from data.json).  v3.2: no separator — CSS puts
+         the year flush RIGHT on the same line, and it drops to its own right-aligned row
+         when a phone is too narrow to hold both. -->
+    <p class="sub"><span data-i18n="tagline">Lluvia en el sur, observada y prevista</span>
+      <span class="hy"><span data-i18n="hydro_year">Año hidrológico</span> <b id="hy">—</b></span></p>
   </header>
 
   <main>
@@ -87,6 +93,6 @@
   <footer><p id="foot">…</p></footer>
 
   <script src="vendor/leaflet/leaflet.js"></script>
-  <script src="js/app.js?v=3.0"></script>
+  <script src="js/app.js?v=3.4"></script>
 </body>
 </html>
