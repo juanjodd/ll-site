@@ -1,121 +1,15 @@
-/* lloverllover — app.js  (vanilla JS + Leaflet only; plan.md Phase 7 / reqs 2-9) */
+/* lloverllover — app.js  (vanilla JS + Leaflet only; plan.md Phase 7 / reqs 2-9)
+   v3.5: everything about numbers, colours and the paired day series lives in plot.js,
+   loaded BEFORE this file — the map page adds the legend, the card, the directory,
+   the search, the balloons and the video on top of that one shared language. */
 "use strict";
 
-const $ = (s, r = document) => r.querySelector(s);
-const $$ = (s, r = document) => [...r.querySelectorAll(s)];
-const MODEL_ACTIVE = "ecmwf_ifs_0p25";
-/* Cache-busting (plan §2.5): index.html and about.html load these assets as
-   `?v=SOMETHING`, and we reuse that own version for the i18n fetch, so bumping the
-   two HTML tags is enough — otherwise a returning visitor keeps whatever the browser
-   cached and never sees the new site.  data.json is never cached at all: it changes
-   with every pipeline run. */
-const VER = (document.currentScript &&
-  (document.currentScript.src.match(/[?&]v=([^&]+)/) || [])[1]) || "dev";
 /* The intro video lives in index.html (official embed markup): it is on the page
    with its src already set, so it shows without waiting for any script. */
 
-let DATA = null, I18N = null, LANG = localStorage.getItem("llo_lang") || "es";
 let map = null, markers = {}, selected = null;
 
-/* ---------- helpers ---------- */
-const t = (k, ...args) => {
-  let s = (I18N[LANG] && I18N[LANG][k]) || k;
-  if (args.length) s = s.replace(/\{(\d+)\}/g, (_, i) => args[+i] ?? "");
-  return s;
-};
-const locale = () => LANG === "es" ? "es-ES" : "en-GB";
-const num = (v, d = 1) => v == null ? "—"
-  : v.toLocaleString(locale(), { maximumFractionDigits: d });
-const norm = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-/* A forecast is ONE thing everywhere on the site: an ordered array of calendar-day
-   accumulations, index 0 = today (data.json contract, Phase 8).  Marker colour,
-   directory amount, ranking and the bar plot all read these numbers through
-   rainSum()/fcDays(), so they can never disagree. */
-const fcDays = (st) => { const a = st.fc ? st.fc[MODEL_ACTIVE] : null; return Array.isArray(a) ? a : null; };
-/* "MÁLAGA" -> "Málaga" — nothing on this site is ALL CAPS (req. 4) */
-const titleCase = (s) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
-/* "2026-11-15" -> "15 nov" / "15 Nov", no timezone surprises: build from parts */
-function fmtDay(iso) {
-  if (!iso) return "";
-  const [y, m, d] = iso.split("-").map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString(locale(),
-    { day: "numeric", month: "short" }).replace(/\.$/, "");
-}
-const isoOf = (dt) => `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
-/* The days the forecast covers, from the pipeline's own meta (never from the
-   browser clock: the labels must match the numbers on disk). */
-function fcDates() {
-  const m = DATA.models[MODEL_ACTIVE] || {};
-  if (Array.isArray(m.dates) && m.dates.length) return m.dates;
-  const out = [], n = Math.max(...DATA.stations.map(s => (fcDays(s) || []).length), 1);
-  for (let k = 0; k < n; k++) {
-    const d = new Date(); d.setHours(12, 0, 0, 0); d.setDate(d.getDate() + k);
-    out.push(isoOf(d));
-  }
-  return out;
-}
-/* Weekday initial of an ISO date — index = getDay() (0 = Sunday), so the letters
-   start wherever "today" happens to fall: L M M J V S D in Spanish. */
-const dayInitial = (iso) => {
-  const [y, m, d] = iso.split("-").map(Number);
-  const set = I18N[LANG].day_initials;
-  return (Array.isArray(set) && set.length === 7 ? set : ["D", "L", "M", "M", "J", "V", "S"])[new Date(y, m - 1, d).getDay()];
-};
-const isToday = (iso) => iso === isoOf(new Date());
-
-/* Full-colour blue ramp (req. 2, v2.1): the map is muted instead, so the markers
-   never get desaturated — pale blues would vanish against light tiles. */
-function fcColor(mm) {
-  if (mm == null || mm < 0.05) return "#b0b8bf";   // none — neutral slate
-  if (mm < 1) return "#8ec7e6";                    // trace
-  if (mm < 5) return "#4ba3d3";                    // light
-  if (mm < 20) return "#1f78b4";                   // moderate
-  return "#08519c";                                // heavy
-}
-const BANDS = [[0, "band_none"], [0.05, "band_trace"], [1, "band_light"],
-               [5, "band_moderate"], [20, "band_heavy"]];
-
-/* ---------- the 5-day forecast: one number, one picture (reqs. 1-3) ---------- */
-/* The ONE total the whole site means: the sum of the forecast days (today … +4).
-   Marker, card border, directory dot and bracket amount all come from it. */
-const rainSum = (s) => (fcDays(s) || []).reduce((a, b) => a + (b || 0), 0);
-const WET_MIN = 0.05;           // below this the ramp says "nada" → not listed either
-/* Log height scale: a 30 l day must not be 300× the height of a 0,1 l day, yet a
-   nearly dry week must still show which days were wetter.  Bar height is
-   log10(v / WET_MIN) up to the wettest single day anywhere in the region, rounded
-   up to a band edge — so the picture is comparable between places and does not
-   jump around on every refresh. */
-let FC_MAX = 10;
-function measureScale() {
-  let mx = 0;
-  for (const s of DATA.stations)
-    for (const v of (fcDays(s) || [])) if (v > mx) mx = v;
-  FC_MAX = [0.5, 1, 2, 5, 10, 20, 30, 50, 80, 120, 200, 300].find(x => x >= mx)
-    || Math.ceil(mx);
-}
-const barFrac = (v) => !v || v <= 0 ? 0
-  : Math.min(1, Math.max(0, Math.log10(v / WET_MIN) / Math.log10(FC_MAX / WET_MIN)));
-
-/* The tiny bar plot that replaces "hoy X · mañana Y": one blue bar per forecast
-   day, weekday initials as the baseline starting from today, the mm number on (in
-   tall bars, above short ones), grey stub for a dry day. */
-function barsHtml(st) {
-  const days = fcDays(st), dates = fcDates();
-  if (!days || !days.length) return `<p class=hl>${t("fc_none")}</p>`;
-  const cols = days.map((v, i) => {
-    const iso = dates[i] || "";
-    const f = barFrac(v);
-    const inside = f >= 0.36;                       // room for the number inside
-    const when = i === 0 ? t("today") : i === 1 ? t("tomorrow") : fmtDay(iso);
-    return `<span class="fcday${isToday(iso) ? " now" : ""}"` +
-      ` title="${when}${iso ? " · " + fmtDay(iso) : ""}">` +
-      `<span class=fctrack><i class="fbar${inside ? " in" : " out"}"` +
-      ` style="height:${(f * 100).toFixed(1)}%;background:${fcColor(v)}"` +
-      `><b>${num(v)}</b></i></span>` +
-      `<span class=fcwd>${dayInitial(iso)}</span></span>`;
-  }).join("");
-  return `<span class=fcbars>${cols}</span>`;
-}
+/* The static i18n sweep, applyStatic(), lives in plot.js — both pages run it. */
 
 function haversine(a, b, c, d) {
   const R = 6371, r = Math.PI / 180;
@@ -169,20 +63,6 @@ async function selectByLocation() {
 }
 
 /* ---------- rendering ---------- */
-function applyStatic() {
-  document.documentElement.lang = LANG;
-  document.title = t("site_title");
-  $$("[data-i18n]").forEach(e => { e.textContent = t(e.dataset.i18n); });
-  $$("[data-i18n-ph]").forEach(e => { e.placeholder = t(e.dataset.i18nPh); });
-  $$("[data-i18n-title]").forEach(e => { e.title = t(e.dataset.i18nTitle); });
-  $$("[data-i18n-aria]").forEach(e => { e.setAttribute("aria-label", t(e.dataset.i18nAria)); });
-  $$("#lang button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === LANG)));
-  /* the player has no visible label any more (req. 8, v2.2), but its accessible
-     name still follows the language */
-  const vf = $("#video-frame");
-  if (vf) vf.title = t("video_title");
-}
-
 /* The video popup must cover everything EXCEPT the page header, so the
    "lloverllover" title is never hidden: measure the header and hand it to CSS. */
 function headerGap() {
@@ -280,7 +160,10 @@ function popupHtml(st) {
 /* The card (v2.3): the percentages are GONE — Juanjo found them confusing, and the two
    accumulation numbers already tell the story.  The Hidrosur link moved from its own
    paragraph to the end of the province · altitude line, where it belongs: that line is
-   about WHERE this place is, and the ficha is the full version of the same information. */
+   about WHERE this place is, and the ficha is the full version of the same information.
+   v3.5: the NAME is now a door, not a gesture — it opens the place's own page (the ten
+   days, the table, the zoomed map), exactly like a directory row; "ver en el mapa" was
+   the old answer to a question this page now answers better. */
 function renderCard(st) {
   if (!st) { $("#card").innerHTML = `<p class=hint>${t("select_hint")}</p>`; return; }
   const col = fcColor(rainSum(st));          // same 5-day total as the marker and the list
@@ -288,9 +171,11 @@ function renderCard(st) {
   const link = st.url
     ? `<a href="${st.url}" target=_blank rel="noopener" class=hidro>${t("station_link")}</a>` : "";
   $("#card").innerHTML = `
-    <h2 class=goto tabindex=0 role=button title="${t("goto_hint")}" style="border-color:${col}">${st.name}</h2>
+     <h2 class=goto style="border-color:${col}"><a href="station.html?n=${st.n}"
+        title="${t("goto_hint")}">${st.name}</a></h2>
     ${detailLines(st)}
-    <p class="meta">${where}${link}</p>`;
+    <p class="meta">${where}${link}</p>
+    <p class="hint pairh">${t("pair_hint")}</p>`;
 }
 
 /* Directory (req. 5, v2.2): a live list of the places where rain IS forecast —
@@ -304,7 +189,9 @@ function renderDirectory() {
   const dot = (mm) => `<span class=dot style="background:${fcColor(mm)}"></span>`;
   /* the amount in brackets: compact, and it reads as one line per place */
   const val = (x) => `<span class=val>(${num(x)} ${t("litre_short")})</span>`;
-  const row = (s) => `<li data-n="${s.n}">${dot(rainSum(s))}<span class=nm>${s.name}</span>${val(rainSum(s))}</li>`;
+  /* v3.5 (Juanjo): a row's NAME is a door — it opens the place's own page. */
+  const row = (s) => `<li data-n="${s.n}"><a href="station.html?n=${s.n}" title="${t("goto_hint")}">` +
+    `${dot(rainSum(s))}<span class=nm>${s.name}</span>${val(rainSum(s))}</a></li>`;
 
   const wet = DATA.stations.filter(s => rainSum(s) >= WET_MIN);
   if (!wet.length) {
@@ -324,12 +211,8 @@ function renderDirectory() {
         <ul>${list.map(row).join("")}</ul></details>`);
 
   $("#directory").innerHTML = provHtml.join("");
-  /* v3.1: a row means "show me this place" — the CARD is the answer (it is the full
-     version of the balloon), so the page goes up to it and no balloon opens over the map. */
-  $$("#directory li[data-n]").forEach(li =>
-    li.addEventListener("click", () =>
-      focusPlace(DATA.stations.find(s => s.n === +li.dataset.n),
-        { scroll: "card", balloon: false })));
+  /* v3.5: the rows are plain links now (station.html?n=…) — no click listener, and
+     middle-click / "open in new tab" work because they always did what they look like. */
 }
 
 /* ---------- search: every place of the network, rain or none (req. 9, v2.3) ----------
@@ -464,15 +347,15 @@ function select(st, pan = false, scroll = pan) {
   if (scroll) $("#card").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-/* Chosen from the LIST, the SEARCH box or the card's own name.  v3.1 (Juanjo) splits the
-   two things that used to travel together — moving the page, and opening the balloon:
-     scroll: "card" → bring the selected-place card to the top of the screen (a directory row)
-     scroll: "map"  → bring the MAP to the middle (the card's name: "ver en el mapa")
+/* Chosen from the SEARCH box (v3.1 gesture, kept).  v3.5 splits the two things that used
+   to travel together — moving the page, and opening the balloon:
+     scroll: "map"  → bring the MAP to the middle (the default: a tap on a balloon's
+                      neighbour that turned into a chosen place)
      scroll: null   → leave the page exactly where the reader put it (a search pick, arrival)
-     balloon: open the popup.  A place you PICKED is already spelled out in the card, so the
-              row and the search no longer throw a balloon over the map for the same numbers;
-              the card's name and the arrival keep it, because there it is the reward for
-              having gone to the map.
+     balloon: open the popup.  A place you PICKED is already spelled out in the card, so
+              the search never throws a balloon over the map for the same numbers.
+   The card's name and the directory rows are NOT here any more — since v3.5 they are
+   links to station.html, the page that answers "tell me about this place" in full.
    Either way the marker is emphasised and the map CENTRES on it inside its own box (`select`
    pans), so the dot is sitting there waiting whenever the reader scrolls down. */
 function focusPlace(st, { scroll = "map", balloon = true } = {}) {
@@ -486,11 +369,7 @@ function focusPlace(st, { scroll = "map", balloon = true } = {}) {
 
 /* ---------- init ---------- */
 async function boot() {
-  /* i18n belongs to the code, so it travels under the same ?v= as the script tag;
-     the numbers never come from cache — data.json is rewritten 4 times a day. */
-  [I18N, DATA] = await Promise.all([
-    fetch(`js/i18n.json?v=${VER}`).then(r => r.json()),
-    fetch("data.json", { cache: "no-store" }).then(r => r.json())]);
+  await loadCommon();                // i18n + numbers, the same way station.js gets them
 
   applyStatic(); renderLegend(); renderFooter();
   measureScale();                        // log scale for the bar plot (req. 3)
@@ -512,7 +391,7 @@ async function boot() {
       // and the SAME number the balloon and the directory show: the 5-day total
       color: "#ffffff", weight: 1.5 }).addTo(map)
       .bindTooltip(st.name)
-      .bindPopup(popupHtml(st))
+      .bindPopup(popupHtml(st), { maxWidth: 360 })   // v3.5: the 10-day pair series needs room
       /* v2.4: a marker tap opens the balloon and selects, but the view stays
          exactly where the reader left it — no zoom on marker select. */
       .on("click", () => select(st, false, false));
@@ -536,18 +415,9 @@ async function boot() {
   select(wettestPlace(), false, false);
   selectByLocation();                    // upgrades to the nearest place, if already allowed
 
-  /* v2.4.2: the card's NAME is the same "take me there" gesture as a list pick —
-     click (or Enter/Space on the focused heading) zooms and opens its balloon.
-     Delegated on #card because renderCard() rewrites the heading on every select. */
-  $("#card").addEventListener("click", e => {
-    if (e.target.closest("h2.goto") && selected) focusPlace(selected);
-  });
-  $("#card").addEventListener("keydown", e => {
-    if (e.target.closest("h2.goto") && selected && (e.key === "Enter" || e.key === " ")) {
-      e.preventDefault();
-      focusPlace(selected);
-    }
-  });
+  /* v3.5: the card's NAME is a link to the place's page (renderCard) — the v2.4.2
+     click-to-zoom listeners died with it: an anchor needs no delegation, no
+     keydown handler and no tabindex; it has always done all three by itself. */
 
   $$("#lang button").forEach(b => b.addEventListener("click", () => {
     LANG = b.dataset.lang; localStorage.setItem("llo_lang", LANG);

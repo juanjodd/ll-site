@@ -51,10 +51,11 @@ header .sub .hy { flex: none; }
 
 #card { border: 1px solid #ddd; border-radius: .5rem; margin: .5rem .75rem; padding: .6rem .8rem; }
 #card h2 { border-left: 6px solid #b0b8bf; padding-left: .5rem; }
-/* v2.4.2: the card's place name is a "take me there" control (focusPlace) —
-   pointer + a light dotted underline say so without shouting over the number. */
-#card h2.goto { cursor: pointer; }
-#card h2.goto:hover, #card h2.goto:focus { text-decoration: underline dotted; }
+/* v3.5: the card's place name is a LINK — it opens the place's own page (ten days,
+   the table, the zoomed map).  A real anchor: middle-click, "open in new tab" and the
+   keyboard all work because it is the thing itself, not a gesture imitating one. */
+#card h2.goto a { color: inherit; text-decoration: none; }
+#card h2.goto a:hover, #card h2.goto a:focus { text-decoration: underline dotted; }
 #card p { margin: .18rem 0; font-size: .95rem; }
 #card p.hl { font-weight: 600; margin-top: .45rem; }
 /* The card's last line (v2.3): province · altitude on the left, the Hidrosur ficha on
@@ -124,9 +125,13 @@ header .sub .hy { flex: none; }
 @media (min-width: 560px) { #directory ul { columns: 2; } }
 @media (min-width: 820px) { #directory ul { columns: 3; } }
 @media (min-width: 1180px) { #directory ul { columns: 4; } }
-#directory li[data-n] { display: flex; align-items: center; gap: .3rem;
-  break-inside: avoid; padding: .16rem .2rem; border-bottom: 1px solid #f2f2f2;
-  font-size: .82rem; cursor: pointer; }
+#directory li[data-n] { break-inside: avoid; border-bottom: 1px solid #f2f2f2;
+  font-size: .82rem; }
+/* v3.5: the whole row is one link — the place's page (dot, name, amount stay the
+   same words, just wrapped in a door). */
+#directory li[data-n] a { display: flex; align-items: center; gap: .3rem;
+  padding: .16rem .2rem; color: inherit; text-decoration: none; min-width: 0; }
+#directory li[data-n] a:hover .nm, #directory li[data-n] a:focus .nm { text-decoration: underline dotted; }
 #directory .dot { width: .5rem; height: .5rem; border-radius: 50%; flex: none;
   border: 1px solid rgba(0, 0, 0, .12); }
 #directory .nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -136,29 +141,44 @@ header .sub .hy { flex: none; }
 footer { border-top: 1px solid #ddd; margin-top: 1.2rem; padding: .6rem .75rem; }
 footer p { font-size: .75rem; color: #555; }
 
-/* The tiny 5-day bar plot (req. 3, v2.2) — plain CSS boxes, no new dependency.
-   One column per forecast day: a fixed-height track with the bar bottom-aligned,
-   the amount INSIDE a tall bar (white) or just above a short one (dark), and the
-   weekday initial as the baseline.  Heights are logarithmic (barFrac in app.js),
-   so one 30 l day does not flatten the rest of the week. */
-.fcbars { display: inline-flex; align-items: flex-end; gap: .3rem; }
-.fcbars .fcday { display: flex; flex-direction: column; align-items: center; }
-/* the bar is sized so that the WIDEST number it may have to hold ("16,1") fits
-   inside it: a white label overflowing a narrow bar would vanish on white */
-.fcbars .fctrack { position: relative; width: 1.32rem; height: 2.5rem; }
-.fcbars .fbar { position: absolute; bottom: 0; left: 0; right: 0; min-height: 2px;
+/* The paired day series (v3.5, Phase 17): one column per day, TWO thin bars each —
+   BLACK = the millimetres the gauges closed that day with, BLUE = the forecast for it
+   (a past day gets its own archived morning 00z; today and beyond get the live cycle).
+   A value nobody has is a "–" in its bar's colour — never a zero, never invented.  The
+   hairline just left of today's column splits memory from forecast.  Heights are
+   logarithmic (barFrac in plot.js) and ONE scale fits black and blue together, so a
+   tall black over a short blue really means the gauges beat the morning's word. */
+.fcbars { display: inline-flex; align-items: flex-end; gap: .2rem; }
+.fcbars .fcday { display: flex; flex-direction: column; align-items: center; position: relative; }
+.fcbars .fctrack { position: relative; width: 1.14rem; height: 2.5rem; flex: none; }
+/* the pair: observation LEFT, forecast RIGHT, each under half the track */
+.fcbars .obar, .fcbars .fbar { position: absolute; bottom: 0; width: 46%; min-height: 2px;
   border-radius: 2px 2px 0 0; }
-.fcbars .fbar b { position: absolute; left: 50%; transform: translateX(-50%);
-  font-size: .56rem; font-weight: 600; line-height: 1; white-space: nowrap;
-  font-variant-numeric: tabular-nums; }
-.fcbars .fbar.in b { top: 2px; color: #fff; }
-.fcbars .fbar.out b { bottom: 100%; color: #444; font-weight: 500; padding-bottom: 1px; }
-.fcbars .fcwd { font-size: .58rem; font-weight: 500; color: #777; line-height: 1;
-  border-top: 1px solid #ccc; margin-top: 2px; padding: .14rem .1rem 0; }
+.fcbars .obar { left: 1px; }
+.fcbars .fbar { right: 1px; }
+/* a thin paired bar can never HOLD its number (a "12,4" is wider than any bar) —
+   so numbers ride above, dark, and only where there is room for them: the live
+   columns on the map page, every column on the place's own page */
+.fcbars .fbar b, .fcbars .obar b { position: absolute; left: 50%; transform: translateX(-50%);
+  bottom: 100%; color: #444; font-weight: 500; font-size: .56rem; line-height: 1;
+  white-space: nowrap; font-variant-numeric: tabular-nums; padding-bottom: 1px; }
+.fcbars .fdash { position: absolute; bottom: 0; width: 46%; text-align: center;
+  font-style: normal; font-weight: 700; font-size: .72rem; line-height: 1; }
+.fcbars .fdash.obs { left: 1px; color: #1f2937; }
+.fcbars .fdash.fc { right: 1px; color: #4ba3d3; }
+.fcbars .fcwd { font-size: .56rem; font-weight: 500; color: #777; line-height: 1;
+  border-top: 1px solid #ccc; margin-top: 2px; padding: .14rem .06rem 0; white-space: nowrap; }
 .fcday.now .fcwd { color: #08519c; font-weight: 700; }      /* today's column */
-#card .fcbars .fctrack { width: 1.9rem; height: 3.2rem; }  /* a little larger in the card */
-#card .fcbars .fbar b { font-size: .66rem; }
-#card .fcbars .fcwd { font-size: .68rem; }
+.fcday.now::before { content: ""; position: absolute; left: -.12rem; top: -.55rem;
+  bottom: 0; width: 1px; background: #0f172a; opacity: .5; }
+/* fourteen columns on a 375 px screen: the line scrolls in its paragraph instead
+   of the numbers lying about the week */
+.leaflet-popup-content p.hl, #card p.hl, #stseries-wrap p.hl { overflow-x: auto; }
+.leaflet-popup-content .fctrack { width: .98rem; height: 2.3rem; }
+.leaflet-popup-content .fcbars { gap: .15rem; }
+#card .fcbars .fctrack { width: 1.5rem; height: 3.1rem; }  /* a little larger in the card */
+#card .fcbars .fbar b, #card .fcbars .obar b { font-size: .64rem; }
+#card .fcbars .fcwd { font-size: .66rem; }
 /* The quantity lines (req. 3, v2.3): each line is a number cell and a words cell.  The
    number is right-aligned inside a box as wide as the widest number of that place
    (`--qw`, set by detailLines in `ch` = tabular digits), so the lines line up **by their
@@ -220,3 +240,30 @@ body.pop-open { overflow: hidden; }        /* the page waits; nothing slides asi
   #map { height: 62vh; }
   #card { margin: .75rem 0; }
 }
+
+/* ---------- the page per place (v3.5, Phase 17) ---------- */
+/* station.html?n=ID: header keeps the logo (the way back) and ES|EN; below, the
+   place's own big pair series, its day-by-day table and a zoomed map.  Every block
+   reuses the map page's rules — colours, bars, numbers come from plot.js, so a
+   "–" here means exactly what a "–" means on the balloon. */
+.station-page header.solo h1 a { color: inherit; text-decoration: none; }
+#place h2 { border-left: 6px solid #b0b8bf; padding-left: .5rem; }
+#place .meta { display: flex; justify-content: space-between; align-items: baseline;
+  gap: .2rem .7rem; flex-wrap: wrap; margin: .4rem 0 .1rem; font-size: .8rem; color: #666; }
+#place .meta a { color: #1565c0; text-decoration: none; white-space: nowrap; }
+#place .meta a:hover { text-decoration: underline; }
+#stseries-wrap, #sttable-wrap { border: 1px solid #ddd; border-radius: .5rem;
+  margin: .5rem .75rem; padding: .6rem .8rem; }
+#stseries-wrap h2, #sttable-wrap h2 { font-size: .92rem; color: #555; margin: .1rem 0 .5rem; }
+#stseries-wrap .fctrack { width: 2.05rem; height: 3.4rem; } /* the grown-up series */
+#stseries-wrap .fbar b, #stseries-wrap .obar b { font-size: .62rem; }
+#stseries-wrap .fcwd { font-size: .62rem; }
+#stseries-wrap .fdash { font-size: .9rem; }
+table.rain { border-collapse: collapse; font-size: .85rem; width: 100%; }
+table.rain th, table.rain td { border: 1px solid #e4e7ea; padding: .28rem .5rem;
+  text-align: right; font-variant-numeric: tabular-nums; }
+table.rain thead th { background: #f6f8fa; font-weight: 600; white-space: nowrap; }
+table.rain tbody th { text-align: left; font-weight: 600; background: #fafbfc;
+  white-space: nowrap; }
+table.rain td.obs { color: #1f2937; font-weight: 600; }    /* the measured day */
+#stmap { height: 340px; margin: .9rem .75rem .3rem; }
