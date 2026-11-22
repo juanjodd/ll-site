@@ -62,8 +62,14 @@ header .sub .hy { flex: none; }
    the right of the SAME line — Juanjo asked the link to sit beside the location info,
    not in a paragraph of its own.  space-between pushes them apart; wrap keeps the phone
    readable (the link drops below the place rather than squeezing the words). */
-#card .meta { display: flex; justify-content: space-between; align-items: baseline;
-  gap: .2rem .7rem; flex-wrap: wrap; margin: .4rem 0 .1rem; font-size: .8rem; color: #666; }
+/* 9th prompt: the card's head is one row, exactly like the page per place —
+   the name (with its colour bar), then municipio · provincia · altitud and the
+   ficha, all baseline-aligned, wrapping below the name on a narrow phone. */
+#card .cardhead { display: flex; align-items: baseline; flex-wrap: wrap;
+  gap: .1rem .8rem; }
+#card .cardhead h2 { margin-bottom: 0; }
+#card .meta { display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap;
+  flex: 1 1 12rem; margin: 0; font-size: .8rem; color: #666; }
 #card .meta a { color: #1565c0; text-decoration: none; white-space: nowrap; }
 #card .meta a:hover { text-decoration: underline; }
 .leaflet-popup-content p { margin: .12rem 0; font-size: .85rem; }
@@ -171,6 +177,12 @@ footer p { font-size: .75rem; color: #555; }
 .fcday.now .fcwd { color: #08519c; font-weight: 700; }      /* today's column */
 .fcday.now::before { content: ""; position: absolute; left: -.12rem; top: -.55rem;
   bottom: 0; width: 1px; background: #0f172a; opacity: .5; }
+/* THE BALLOON WEARS NO SUCH LINE (9th prompt): a balloon holds only the five live days,
+   so a rule at its left edge would mark the start of the picture, not the turn from
+   memory to forecast that the line was invented to say.  Today keeps its bold blue
+   initial; the card and the page per place keep the line, where the past really is
+   on the other side of it. */
+.leaflet-popup-content .fcday.now::before { content: none; }
 /* fourteen columns on a 375 px screen: the line scrolls in its paragraph instead
    of the numbers lying about the week.  THE BALLOON IS NOT IN THAT LIST (v3.7):
    it shows the five live days only, which always fit — no scrollbar in a balloon.
@@ -243,21 +255,20 @@ body.pop-open { overflow: hidden; }        /* the page waits; nothing slides asi
 .prose { max-width: 46rem; line-height: 1.55; padding-left: .75rem; padding-right: .75rem; }
 .prose h2 { font-size: 1.15rem; margin-top: 1.2rem; }
 .prose h3 { font-size: .95rem; margin-top: 1rem; }
-
 @media (min-width: 48rem) {
   #map { height: 62vh; }
   #card { margin: .75rem 0; }
 }
 
 /* ---------- the page per place (v3.5, Phase 17) ---------- */
-/* station.html?n=ID: header keeps the logo (the way back) and ES|EN; below, the
+/* station.html?e=<name>: header keeps the logo (the way back) and ES|EN; below, the
    place's own big pair series, its day-by-day table and a zoomed map.  Every block
    reuses the map page's rules — colours, bars, numbers come from plot.js, so a
    "–" here means exactly what a "–" means on the balloon. */
 .station-page header.solo h1 a { color: inherit; text-decoration: none; }
 #place h2 { border-left: 6px solid #b0b8bf; padding-left: .5rem; }
 /* v3.8 (req. 7): one line — name, then municipio·provincia·altura·ficha LEFT right
-   after it; only Volver al inicio is pushed to the right margin.  Wraps below the
+   after it; only Volver al mapa is pushed to the right margin.  Wraps below the
    name on narrow screens, never orphaned. */
 #place .sthead { display: flex; align-items: baseline; flex-wrap: wrap;
   gap: .15rem .8rem; }
@@ -268,13 +279,15 @@ body.pop-open { overflow: hidden; }        /* the page waits; nothing slides asi
 #place .stmeta > a:last-child { margin-left: auto; }
 #place .stmeta a { color: #1565c0; text-decoration: none; white-space: nowrap; }
 #place .stmeta a:hover { text-decoration: underline; }
-#place .q { font-size: .92rem; margin-top: .3rem; }   /* the two hydro-year lines */
+#place .q { font-size: .92rem; margin-top: .5rem; }   /* the two hydro-year lines */
+/* 9th prompt: those lines are the last thing before the box, so they need room to
+   breathe on both sides — glued to the head line above, or to the border below. */
+#place #stacc { margin-bottom: .85rem; }
 #place .meta { display: flex; justify-content: space-between; align-items: baseline;
   gap: .2rem .7rem; flex-wrap: wrap; margin: .4rem 0 .1rem; font-size: .8rem; color: #666; }
 #place .meta a { color: #1565c0; text-decoration: none; white-space: nowrap; }
 #place .meta a:hover { text-decoration: underline; }
-#stseries-wrap, #sttable-wrap { border: 1px solid #ddd; border-radius: .5rem;
-  margin: .5rem .75rem; padding: .6rem .8rem; }
+
 #stseries-wrap h2, #sttable-wrap h2 { font-size: .92rem; color: #555; margin: .1rem 0 .5rem; }
 #stseries-wrap .fctrack { width: 2.05rem; height: 3.4rem; } /* the grown-up series */
 #stseries-wrap .fbar b, #stseries-wrap .obar b { font-size: .62rem; }
@@ -294,3 +307,24 @@ table.rain tbody th { text-align: left; font-weight: 600; background: #fafbfc;
   white-space: nowrap; }
 table.rain td.obs { color: #1f2937; font-weight: 600; }    /* the measured day */
 #stmap { height: 340px; margin: .9rem .75rem .3rem; }
+
+/* ---------- the family page (puerto-del-barco.html, 9th prompt) ---------- */
+/* ONE column, everything centred, top down: the dedication, the picture, its line of
+   caption, and BELOW them the map — as big as the map on any page per place, because this
+   page is one of those pages.  The image keeps its own
+   width and height so the browser reserves the space (no jump), and it is never upscaled past
+   40rem: the point of the small, soft copy is that it stays a memory, not a file to be mined.
+   The words are centred too — a dedication reads above a photograph, not in its corner. */
+.famcol { display: grid; justify-items: center; gap: .85rem; text-align: center;
+  margin: .6rem auto 1.6rem; padding-inline: .75rem; max-width: 44rem; }
+.famcol img { display: block; width: 100%; max-width: 40rem; height: auto;
+  border: 1px solid #ddd; border-radius: .5rem; }
+/* No height here: the shared `#stmap { height: 340px }` — the map of every page per place —
+   is what sizes it.  This rule only lets it FILL the column (a centred grid item shrinks to
+   nothing without a width) and keeps it at the photograph's measure, and framed like the
+   photograph, since the two are this page's two windows. */
+.famcol #stmap { width: 100%; max-width: 40rem; margin: .25rem 0 0;
+  border: 1px solid #ddd; border-radius: .5rem; }
+.famcap { margin: 0; font-size: 1.02rem; line-height: 1.4; }
+.famwhy { margin: 0; max-width: 34rem; font-size: .98rem; line-height: 1.55; color: #333; }
+.famded { margin: 0; max-width: 34rem; font-size: .9rem; font-style: italic; color: #555; }

@@ -5,9 +5,18 @@
 "use strict";
 
 /* The intro video lives in index.html (official embed markup): it is on the page
-   with its src already set, so it shows without waiting for any script. */
+   with its src already set, so it shows without waiting for any script.  Which script
+   then moves it into a popup — but only the first time this browser opens the landing
+   page today (INTRO_KEY below). */
 
-let map = null, markers = {}, selected = null;
+let map = null, markers = {}, selected = null, barcoMark = null;
+
+/* 9th prompt: the family's door.  A dot on the map, pale yellow so it is never mistaken
+   for a rain gauge, at the Puerto del Barco; it is NOT a station — no rain, no balloon,
+   nothing in data.json, no entry in the directory or the search, and no link anywhere
+   else on the site.  Clicking it is the only thing it knows. */
+const DEL_BARCO = { lat: 36.94938852285483, lon: -4.461716802,
+                   name: "Puerto del Barco", page: "puerto-del-barco.html" };
 
 /* The static i18n sweep, applyStatic(), lives in plot.js — both pages run it. */
 
@@ -166,17 +175,23 @@ function popupHtml(st) {
    v3.5: the NAME is now a door, not a gesture — it opens the place's own page (the ten
    days, the table, the zoomed map), exactly like a directory row; "ver en el mapa" was
    the old answer to a question this page now answers better. */
+/* 9th prompt: the card of the SELECTED place also says which municipio it is — the same
+   rule the detail page uses (norm() folds accents, so a place that IS its municipio does
+   not say it twice).  The directory rows stay bare: 294 lines are a list, not a card. */
 function renderCard(st) {
   if (!st) { $("#card").innerHTML = `<p class=hint>${t("select_hint")}</p>`; return; }
   const col = fcColor(rainSum(st));          // same 5-day total as the marker and the list
-  const where = titleCase(st.prov) + (st.alt != null ? " · " + num(st.alt, 0) + " m " + t("alt") : "");
   const link = st.url
     ? `<a href="${st.url}" target=_blank rel="noopener" class=hidro>${t("station_link")}</a>` : "";
+  /* 9th prompt: the head is the detail page's head.  Name, then the where-line
+     (municipio · provincia · altitud) and the ficha ON THE SAME LINE — the place's
+     identification belongs with its name, not at the bottom of the box. */
   $("#card").innerHTML = `
-     <h2 class=goto style="border-color:${col}"><a href="station.html?e=${st.slug}"
-        title="${t("goto_hint")}">${st.name}</a></h2>
-    ${detailLines(st)}
-    <p class="meta">${where}${link}</p>`;
+    <div class=cardhead>
+      <h2 class=goto style="border-color:${col}"><a href="station.html?e=${st.slug}"
+         title="${t("goto_hint")}">${st.name}</a></h2>
+      <p class="meta">${whereLine(st)}${link}</p>
+    </div>${detailLines(st)}`;
 }
 
 /* Directory (req. 5, v2.2): a live list of the places where rain IS forecast —
@@ -399,6 +414,13 @@ async function boot() {
       .on("click", () => select(st, false, false));
   }
 
+  /* the family dot, drawn AFTER the gauges so a real station is always on top of it */
+  barcoMark = L.circleMarker([DEL_BARCO.lat, DEL_BARCO.lon], {
+    radius: 6, fillColor: "#f7f0c0", fillOpacity: 1,      // pale yellow, and opaque:
+    color: "#e3d488", weight: 1.2 }).addTo(map)           // the same treatment as a gauge
+    .bindTooltip(DEL_BARCO.name)                          // and it wears its name on hover
+    .on("click", () => { location.href = DEL_BARCO.page; });
+
   map.fitBounds(HOME, { padding: [12, 12] });
 
   /* v2.4: closing a balloon NO LONGER retreats the map to the whole region (the
@@ -488,16 +510,49 @@ function restore(p) {
   }, 1400);
 }
 
+/* ---------- the intro video, ONCE A DAY (9th prompt) ----------
+   The clip explains WHY the page exists, so it is worth a visitor's minute the first
+   time — and it is an interruption every time after that: it autoplays with sound, it
+   pulls a megabyte from YouTube, and it wants a click to be allowed that sound.  So the
+   popup opens the FIRST time the landing page is opened in a day, and not again until
+   tomorrow.  The mark is the local date (`isoOf(new Date())`, the same day arithmetic the
+   day series uses), kept in localStorage.
+
+   A DAY and not a SESSION, deliberately: sessionStorage dies with the tab, so "once a
+   session" means the video returns in every new window, every restarted browser and every
+   private window — which is the noise Juanjo asked to lose, arriving anyway.  A day is also
+   the unit this whole site thinks in: the rain, the four republishes, the hydrological year.
+   (And not "once ever": a page that remembers a visitor forever is a worse trade than a page
+   that shows its introduction on a new month.)
+
+   Two limits, said where they bite:
+     · closing the popup is still FINAL (v2.2: no button brings it back), so a mistimed close
+       waits until tomorrow — but about.html carries the same clip inline, at any hour.  The
+       gate hides the interruption, not the video.
+     · if storage is blocked (private mode, cookies refused) the mark cannot be read, so
+       `introSeenToday()` says "no" and the video behaves as it always did.  A page that
+       cannot remember you should not punish you for it.
+   The embed markup in index.html and its <noscript> rule are untouched: no JavaScript, no
+   popup, the player simply stays inline. */
+const INTRO_KEY = "llo_intro_day";
+const introSeenToday = () => {
+  try { return localStorage.getItem(INTRO_KEY) === isoOf(new Date()); }
+  catch (e) { return false; }                    // storage refused: show it, as before
+};
+
 /* The embed sits in index.html, so a browser without JavaScript still shows it (see
-   the noscript rule).  With scripts on, the FIRST thing that happens is that the
-   block is lifted into a centred popup — no inline player, no flash.  There is no
-   label line above the player. */
+   the noscript rule).  With scripts on, the FIRST thing that happens — once a day — is
+   that the block is lifted into a centred popup: no inline player, no flash.  There is
+   no label line above the player. */
 function popIntro() {
+  if (introSeenToday()) return;              /* today's introduction has already been given */
   const pop = $("#intro-pop"), intro = $("#intro");
   if (pop.hidden && intro.parentElement.id === "intro-holder") {
     $("#intro-slot").appendChild(intro);
     pop.hidden = false;
     document.body.classList.add("pop-open");     // the page waits behind the player
+    try { localStorage.setItem(INTRO_KEY, isoOf(new Date())); }
+    catch (e) { /* not kept: tomorrow it pops again, and so does today */ }
     loadPlayerApi();                             // volume control, and autoplay with sound
   }
 }
@@ -519,7 +574,7 @@ function closeIntro() {
 document.addEventListener("DOMContentLoaded", () => {
   headerGap();                 /* the popup leaves the page title in the clear */
   addEventListener("resize", headerGap);
-  popIntro();                    /* before anything is fetched: the video is a popup */
+  popIntro();                    /* before anything is fetched; it opens once a day, at most */
   boot().catch(e => { console.error(e); $("#card").textContent = "error: " + e; });
   $("#pop-close").addEventListener("click", closeIntro);
   $("#intro-pop").addEventListener("click", e => { if (e.target.id === "intro-pop") closeIntro(); });

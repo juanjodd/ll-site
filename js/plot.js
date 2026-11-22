@@ -60,6 +60,19 @@ const norm = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCa
 const fcDays = (st) => { const a = st.fc ? st.fc[MODEL_ACTIVE] : null; return Array.isArray(a) ? a : null; };
 /* "MÁLAGA" -> "Málaga" — nothing on this site is ALL CAPS (req. 4) */
 const titleCase = (s) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+/* The where-line, one rule for the whole site (9th prompt): municipio, provincia and
+   altitude — used by the card, the directory-free balloon head and the page per place.
+   The municipio is left out when it would say something the name already says ("La Palma
+   del Condado" is its own municipio) and when it is the provincia ("Málaga · 45 m", not
+   "Málaga, Málaga"): the grey line names a place, it does not fill a form.  norm() folds
+   accents and case, so none of those comparisons needs a table of exceptions. */
+function whereLine(st) {
+  const mun = st.mun && norm(st.mun) !== norm(st.name) && norm(st.mun) !== norm(st.prov)
+    ? st.mun : "";
+  const prov = titleCase(st.prov);
+  return (mun ? `${mun}, ${prov}` : prov) +
+    (st.alt != null ? ` · ${num(st.alt, 0)} m ${t("alt")}` : "");
+}
 const dayOfYearLong = (iso, year) => {   // ES "el 21 de noviembre de 2025", EN "21 November 2025"
   const [y, m, d] = iso.split("-").map(Number);
   const mon = new Date(y, m - 1, d).toLocaleDateString(locale(), { month: "long" });

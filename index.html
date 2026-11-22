@@ -9,7 +9,7 @@
   <!-- ?v= is the cache-buster: bump it here (both files, and about.html) whenever the
        CSS, JS or i18n.json changes, or a returning visitor keeps serving the old site
        from the browser cache.  app.js reads this version back off its own tag. -->
-  <link rel="stylesheet" href="css/style.css?v=3.9">
+  <link rel="stylesheet" href="css/style.css?v=4.2">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>🌧️</text></svg>">
 </head>
 <body>
@@ -41,8 +41,11 @@
 
   <main>
     <!-- The embed is in the HTML so it appears with no JavaScript at all.  app.js
-         lifts this block into #intro-pop on load; closing the popup takes the video
-         out of the page for good (src cleared, holder hidden).  The holder is hidden
+         lifts this block into #intro-pop on load — ONCE A DAY, the first time this
+         browser opens the page (localStorage.llo_intro_day holds the date it last
+         popped); closing the popup takes the video out of the page for good (src
+         cleared, holder hidden), and about.html carries the same clip inline for the
+         rest of the day.  The holder is hidden
          against the flash of a large inline player before the script runs, and the
          noscript rule below puts it back for browsers without JavaScript.
          It autoplays MUTED in this markup, because that is the only kind of
@@ -93,7 +96,7 @@
   <footer><p id="foot">…</p></footer>
 
   <script src="vendor/leaflet/leaflet.js"></script>
-  <script src="js/plot.js?v=3.9"></script>
-  <script src="js/app.js?v=3.9"></script>
+  <script src="js/plot.js?v=4.2"></script>
+  <script src="js/app.js?v=4.2"></script>
 </body>
 </html>

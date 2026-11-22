@@ -1,4 +1,4 @@
-/* lloverllover — station.js (v3.5→v3.9, Phases 17-21): the page per place.
+/* lloverllover — station.js (v3.5→v4.0, Phases 17-23): the page per place.
    One file for all 294 places: station.html?e=<name> (or the old ?n=ID) renders
    the ten-day pair series
    (five closed days measured beside their 00z, five live forecast days — the
@@ -17,25 +17,23 @@ let ST = null, TBL = null, smini = null;
 function renderPlace() {
   const st = ST;
   document.title = `${st.name} · lloverllover`;
-  /* 7th prompt: when the name is not the municipio, the municipio comes first —
-     municipio, provincia, altura and the ficha all LEFT, right after the name;
-     only Volver al inicio keeps the right.  (norm() folds accents and case, so
-     "La Palma del Condado" does not repeat the municipio it already is.) */
-  const mun = st.mun && norm(st.mun) !== norm(st.name) ? st.mun : "";
-  const where = [mun, titleCase(st.prov)].filter(Boolean).join(", ") +
-    (st.alt != null ? " · " + num(st.alt, 0) + " m " + t("alt") : "");
+  /* 7th prompt: municipio, provincia, altura and the ficha all LEFT, right after the
+     name; only Volver al mapa keeps the right.  Since the 9th prompt the rule lives
+     in plot.js (whereLine), because the card on the map page wears the same line. */
+  const where = whereLine(st);
   const link = st.url
     ? `<a href="${st.url}" target=_blank rel="noopener" class=hidro>${t("station_link")}</a>` : "";
+  /* 9th prompt (correction to the 8th): the two hydrological-year accumulations sit
+     ABOVE the box — the page reads name, where, litros, and only then the picture. */
   $("#place").innerHTML = `
     <div class=sthead>
       <h2 style="border-color:${fcColor(rainSum(st))}">${st.name}</h2>
       <p class=stmeta><span class=stwhere>${where}${link}</span>
         <a href="index.html">← ${t("home_link")}</a></p>
-    </div>`;
+    </div>
+    <div id=stacc>${accRows(st)}</div>`;
   /* 8th prompt: the hint says exactly what black and blue are — observed at THIS
-     place's SAIH network (linked), forecast by the CEPPM's model (linked); and the
-     two hydrological-year accumulations close the section, under the bars, in the
-     same order the home card shows them. */
+     place's SAIH network (linked), forecast by the CEPPM's model (linked). */
   const NET = { hidrosur: ["net_hidrosur", "https://www.redhidrosurmedioambiente.es/saih/"],
                 chg:      ["net_chg", "https://www.chguadalquivir.es/saih/"] };
   const net = NET[st.net] || NET.hidrosur;
@@ -43,8 +41,7 @@ function renderPlace() {
   const ceppmlink = `<a href="https://www.ecmwf.int/${LANG === "es" ? "es/" : ""}" ` +
     `target=_blank rel=noopener>${t("ceppm")}</a>`;
   $("#stseries").innerHTML = `<p class=hl>${barsHtml(st, true)}</p>
-    <p class="hint pairh">${t("pair_hint", netlink, ceppmlink)}</p>
-    <div id=stacc>${accRows(st)}</div>`;
+    <p class="hint pairh">${t("pair_hint", netlink, ceppmlink)}</p>`;
   const table = tableHtml(TBL, st.n);
   $("#sttable").innerHTML = table
     ? table + `<p class=hint>${t("table_note")}</p>`

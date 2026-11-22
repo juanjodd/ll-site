@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<!-- El Puerto del Barco (v4.0, 9th prompt).  Reached ONLY by the pale yellow dot on the map
+     (DEL_BARCO in app.js): no menu, no footer link, nothing in the directory or the search —
+     that dot is the only door, and it is deliberately not a station: no rain, no balloon, not
+     in data.json, never built by the pipeline.  Hand-written page in git, like casa.html, and
+     dressed like the pages per place: the same header and the same head line (name, then where
+     on the left, Volver al mapa on the right).  Below it ONE centred column, top down: the
+     dedication, the picture, its line of caption, and the map UNDERNEATH — the same size
+     the map has on any page per place, because this is one of those pages.
+     The photograph ships DELIBERATELY at 640×480, lightly blurred and with no metadata of any
+     kind (no EXIF, no XMP, no GPS): small enough to read the moment, soft enough that a face
+     is not the point.  The full-resolution original stays OUTSIDE this repo.
+     `robots: noindex, nofollow` asks search engines to stay out; it is a politeness, not a
+     lock — GitHub Pages serves this file to anyone who has its exact address. -->
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Puerto del Barco — lloverllover</title>
+  <meta name="description" content="Nota de familia.">
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+  <link rel="stylesheet" href="css/style.css?v=4.2">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>🌧️</text></svg>">
+</head>
+<body class="station-page">
+  <header class="solo">
+    <h1><a href="index.html">llover<span>llover</span></a></h1>
+  </header>
+
+  <main>
+    <!-- the same head the pages per place draw: name with its colour bar, the where
+         underneath on the LEFT, the way home on the RIGHT.  Antequera, Málaga; the
+         altitude is the terrain height of this point (Open-Meteo, the same estimate
+         the pipeline uses for the places), never a survey mark. -->
+    <section id="place">
+      <div class="sthead">
+        <h2 style="border-color:#e3d488">Puerto del Barco</h2>
+        <p class="stmeta"><span class="stwhere">Antequera, Málaga · 837 m altitud</span>
+          <a href="index.html">← Volver al mapa</a></p>
+      </div>
+    </section>
+
+    <!-- One column, everything centred, top down: the origin, the dedication, the picture,
+         its caption, and BELOW them the map.  The origin now lives here because this is where
+         the family story begins; the About page keeps only the short public version. -->
+    <div class="famcol">
+      <p class="famwhy">Mis tíos y mis abuelos maternos vivían del campo, y la lluvia ha sido
+      un tema recurrente en la familia. De niño me fascinaban los manantiales, los que
+      surgían en invierno junto a la casa de mis abuelos y brotaban del suelo, y me encantaba
+      mirar desde la ventanilla del coche el cauce del río Guadalmedina cada fin de semana que
+      iba a visitarlos, para apreciar cómo variaba su caudal, y el de los arroyos que
+      desembocaban en él desde los montes al norte de Málaga.</p>
+      <p class="famded">Dedicado a mis abuelos, María la Gorda la de las Pilas, y Manuel Duarte
+        Santana, que le dio la vuelta a la campana.</p>
+      <img src="assets/puerto-del-barco.jpg?v=4.0" width="640" height="480"
+           alt="Una niña agachada sobre el pilón de una fuente de piedra, entre la hierba seca y las matas, con la sierra al fondo.">
+      <p class="famcap">La fuente junto al camino que sube al monte.</p>
+      <div id="stmap" role="img" aria-label="Mapa de Puerto del Barco"></div>
+    </div>
+  </main>
+
+  <script src="vendor/leaflet/leaflet.js"></script>
+  <script>
+    "use strict";
+    /* The place's own view, exactly as station.js draws it: key-free OpenStreetMap tiles
+       (muted by CSS, like every other map here), zoomed to 11, and the dot wearing its
+       name.  Pale yellow — this one is family, not a rain gauge. */
+    const LAT = 36.94938852285483, LON = -4.461716802;
+    const mini = L.map("stmap", { scrollWheelZoom: false });
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19, subdomains: "abc", attribution: "" }).addTo(mini);
+    mini.setView([LAT, LON], 11);
+    L.circleMarker([LAT, LON], {
+      radius: 9, fillColor: "#f7f0c0", fillOpacity: 1,
+      color: "#374151", weight: 2.5 }).addTo(mini)
+      .bindTooltip("Puerto del Barco", { permanent: true, direction: "top", offset: [0, -8] });
+    /* the box sits under a photograph whose height is only known when the JPEG lands,
+       so Leaflet is told to look at its size again then (else it paints a grey strip). */
+    window.addEventListener("load", () => mini.invalidateSize());
+  </script>
+</body>
+</html>
