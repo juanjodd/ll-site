@@ -1,12 +1,14 @@
-/* lloverllover — station.js (v3.5/v3.6, Phases 17-18): the page per place.
+/* lloverllover — station.js (v3.5→v3.8, Phases 17-20): the page per place.
    One file for all 294 places: station.html?n=ID renders the ten-day pair series
    (five closed days measured beside their 00z, five live forecast days — the
    balloon's picture grown up, with a number on every bar), the day-by-day table
    from table.json (what fell beside EVERY cycle that covered the whole of that
-   day: 00/06/12/18z of the four days before, plus the day's own 00z), and a
-   zoomed map that answers "where, exactly?".  No new numbers are computed here:
-   plot.js owns the colours and the bars, and a place that reads "–" on the map
-   reads "–" here, because it is the same cell of the same archive. */
+   day: five groups — own day, then 1…4 days before — each reading 18z 12z 06z
+   00z, the own-day fractions built across cycles by the backfill), the two
+   hydrological-year accumulations, and a zoomed map that answers "where,
+   exactly?".  No new numbers are computed here: plot.js owns the colours and
+   the bars, and a place that reads "–" on the map reads "–" here, because it is
+   the same cell of the same archive. */
 "use strict";
 
 let ST = null, TBL = null, smini = null;
@@ -14,16 +16,22 @@ let ST = null, TBL = null, smini = null;
 function renderPlace() {
   const st = ST;
   document.title = `${st.name} · lloverllover`;
-  const where = titleCase(st.prov) +
+  /* 7th prompt: when the name is not the municipio, the municipio comes first —
+     municipio, provincia, altura and the ficha all LEFT, right after the name;
+     only Volver al inicio keeps the right.  (norm() folds accents and case, so
+     "La Palma del Condado" does not repeat the municipio it already is.) */
+  const mun = st.mun && norm(st.mun) !== norm(st.name) ? st.mun : "";
+  const where = [mun, titleCase(st.prov)].filter(Boolean).join(", ") +
     (st.alt != null ? " · " + num(st.alt, 0) + " m " + t("alt") : "");
   const link = st.url
     ? `<a href="${st.url}" target=_blank rel="noopener" class=hidro>${t("station_link")}</a>` : "";
   $("#place").innerHTML = `
     <div class=sthead>
       <h2 style="border-color:${fcColor(rainSum(st))}">${st.name}</h2>
-      <p class=stmeta>${where}${link}
+      <p class=stmeta><span class=stwhere>${where}${link}</span>
         <a href="index.html">← ${t("home_link")}</a></p>
-    </div>`;
+    </div>
+    <div id=stacc>${accRows(st)}</div>`;
   /* the big pair series: same barsHtml the balloon draws, big=true = a number on
      every bar and the day of the month beside the weekday initial */
   $("#stseries").innerHTML = `<p class=hl>${barsHtml(st, true)}</p>

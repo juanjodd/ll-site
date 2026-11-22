@@ -256,14 +256,19 @@ body.pop-open { overflow: hidden; }        /* the page waits; nothing slides asi
    "–" here means exactly what a "–" means on the balloon. */
 .station-page header.solo h1 a { color: inherit; text-decoration: none; }
 #place h2 { border-left: 6px solid #b0b8bf; padding-left: .5rem; }
-/* v3.7 (req. 6): one line — name left; province·altitude, the Hidrosur ficha and
-   Volver al inicio right; wraps below the name on narrow screens, never orphaned */
-#place .sthead { display: flex; align-items: baseline; justify-content: space-between;
-  flex-wrap: wrap; gap: .15rem .8rem; }
+/* v3.8 (req. 7): one line — name, then municipio·provincia·altura·ficha LEFT right
+   after it; only Volver al inicio is pushed to the right margin.  Wraps below the
+   name on narrow screens, never orphaned. */
+#place .sthead { display: flex; align-items: baseline; flex-wrap: wrap;
+  gap: .15rem .8rem; }
 #place .stmeta { display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap;
-  margin: 0; font-size: .8rem; color: #666; justify-content: flex-end; }
+  flex: 1 1 14rem; margin: 0; font-size: .8rem; color: #666; }
+#place .stwhere { display: inline-flex; align-items: baseline; gap: .6rem;
+  flex-wrap: wrap; }
+#place .stmeta > a:last-child { margin-left: auto; }
 #place .stmeta a { color: #1565c0; text-decoration: none; white-space: nowrap; }
 #place .stmeta a:hover { text-decoration: underline; }
+#place .q { font-size: .92rem; margin-top: .3rem; }   /* the two hydro-year lines */
 #place .meta { display: flex; justify-content: space-between; align-items: baseline;
   gap: .2rem .7rem; flex-wrap: wrap; margin: .4rem 0 .1rem; font-size: .8rem; color: #666; }
 #place .meta a { color: #1565c0; text-decoration: none; white-space: nowrap; }

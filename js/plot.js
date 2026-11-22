@@ -195,24 +195,43 @@ function barsHtml(st, big = false, liveOnly = false) {
 function tableHtml(T, n) {
   if (!T || !Array.isArray(T.vd) || !T.rows || !Array.isArray(T.rows[n])) return "";
   const vd = T.vd, rows = T.rows[n];
-  /* Column ORDER (Juanjo, 6th prompt): the day, what fell, the day's OWN forecast,
-     then the runs issued 1, 2, 3 and 4 days before — the archive order reversed from
-     v3.6's oldest-first.  All 17 cycle cells are still shown (his earlier rule: every
-     cycle that fully covered the day); only the reading order changed:
-     cells are [obs, (4d)00,06,12,18, (3d)…4 cells, (2d)…, (1d)…, own 00z] at 0…17. */
-  const COLS = [0, 17, 13, 14, 15, 16, 9, 10, 11, 12, 5, 6, 7, 8, 1, 2, 3, 4];
+  /* Cell ORDER is the build's (6th + 7th prompts): the day, what fell, then FIVE
+     groups — the day's OWN runs first, then 1…4 days before — and every group
+     reads 18z 12z 06z 00z, newest hour first.  The own-day 06/12/18z numbers are
+     BUILT across cycles by the backfill (each 6-hour piece from the freshest run
+     that can speak for it); nothing is reordered here, index k is cell k. */
   const body = [];
   for (let i = vd.length - 1; i >= 0; i--) {
     const r = rows[i] || [];
     body.push(`<tr><th scope=row>${fmtDay(vd[i])}${i === vd.length - 1 ? " · " + t("today") : ""}</th>` +
-      COLS.map((k, j) => `<td${j === 0 ? " class=obs" : ""}>${r[k] == null ? DASH : num(r[k])}</td>`)
+      r.map((v, k) => `<td${k === 0 ? " class=obs" : ""}>${v == null ? DASH : num(v)}</td>`)
           .join("") + "</tr>");
   }
-  const groups = [1, 2, 3, 4].map(d => `<th colspan=4>${t(d === 1 ? "th_ago1" : "th_ago", d)}</th>`).join("");
-  const hours = [1, 2, 3, 4].map(() =>
-    "<th>00z</th><th>06z</th><th>12z</th><th>18z</th>").join("");
-  return `<div class=rainwrap><table class=rain><thead>` +
-    `<tr><th scope=col rowspan=2>${t("th_day")}</th>` +
-    `<th scope=col rowspan=2>${t("th_obs")}</th><th scope=col rowspan=2>${t("th_day0")}</th>${groups}</tr>` +
-    `<tr class=hrs>${hours}</tr></thead><tbody>${body.join("")}</tbody></table></div>`;
+  const HOURS = "<th>18z</th><th>12z</th><th>06z</th><th>00z</th>";
+  const group = (label) => `<th colspan=4>${label}</th>`;
+  const head = `<tr><th scope=col rowspan=2>${t("th_day")}</th>` +
+    `<th scope=col rowspan=2>${t("th_obs")}</th>` +
+    group(t("th_day0")) +
+    [1, 2, 3, 4].map(d => group(t(d === 1 ? "th_ago1" : "th_ago", d))).join("") +
+    `</tr><tr class=hrs>${HOURS.repeat(5)}</tr>`;
+  return `<div class=rainwrap><table class=rain><thead>${head}</thead>` +
+    `<tbody>${body.join("")}</tbody></table></div>`;
+}
+
+function accRows(st) {
+  /* The two hydrological-year accumulations (7th prompt: back on the page per
+     place).  Same aligned-numbers treatment as the card — but here only the
+     memory lines: the forecast total lives in the bars above. */
+  const L = t("litres");
+  const shown = (v) => v == null ? "—" : num(v);       // a missing value never says "— litros"
+  const D0 = (fcDates()[0] || "");
+  const hyYear = +D0.slice(0, 4) - (D0.slice(5, 7) < "10" ? 1 : 0);
+  const lastYear = t("day_of_year", fmtDay(D0), hyYear - 1);
+  const qw = Math.max(...[st.acc, st.accP].map(v => shown(v).length));
+  const row = (v, rest) => `<p class="qrow"><b>${shown(v)}</b>` +
+    `<i> ${v == null ? "" : L + " "}${rest}</i></p>`;
+  return `<div class=q style="--qw:${qw}ch">` +
+    row(st.acc, t("since_1_oct")) +
+    ("accP" in st ? row(st.accP, t("between_dates", t("oct1"), lastYear)) : "") +
+    `</div>`;
 }
