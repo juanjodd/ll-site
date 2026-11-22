@@ -129,7 +129,7 @@ function renderLegend() {
        28,8   litros previstos en 5 días
       185,6   litros desde 1 oct
       139,2   litros entre 1 oct y 19 nov de 2025                      */
-function detailLines(st) {
+function detailLines(st, balloon = false) {
   const dates = fcDates(), n = dates.length;
   const L = t("litres");
   /* v2.4.1: presence of the accP KEY in the data is the contract — build.py ships it
@@ -145,16 +145,18 @@ function detailLines(st) {
   const row = (v, rest, cls = "") => `<p class="qrow${cls}"><b>${shown(v)}</b>` +
     `<i> ${v == null ? "" : L + " "}${rest}</i></p>`;   // the space is for text, CSS drops it
   /* ES reads "28,8 litros previstos en 5 días" (v2.3): the number is a forecast, and
-     Juanjo asked that the word say so.  The balloon keeps NO link (req.: link only in the
-     card); the card hangs it off the province line instead — renderCard, `.meta`. */
-  return `<p class=hl>${barsHtml(st)}</p><div class=q style="--qw:${qw}ch">` +
+     Juanjo asked that the word say so.  v3.7: the balloon's series shows the five live
+     days only (no scrollbars in a balloon); the card keeps the whole 5+5. */
+  return `<p class=hl>${barsHtml(st, false, balloon)}</p><div class=q style="--qw:${qw}ch">` +
     row(rainSum(st), t("in_days", n), " tot") +
     row(st.acc, t("since_1_oct")) +
     (hasP ? row(st.accP, t("between_dates", t("oct1"), lastYear)) : "") + `</div>`;
 }
 
 function popupHtml(st) {
-  return `<b>${st.name}</b>${detailLines(st)}`;
+  /* the name is a link to the place's page (6th prompt) */
+  return `<b><a href="station.html?n=${st.n}" title="${t("goto_hint")}">${st.name}</a></b>` +
+    detailLines(st, true);
 }
 
 /* The card (v2.3): the percentages are GONE — Juanjo found them confusing, and the two

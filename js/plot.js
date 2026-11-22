@@ -156,8 +156,9 @@ function seriesCols(st) {
   return cols;
 }
 
-function barsHtml(st, big = false) {
-  const cols = seriesCols(st);
+function barsHtml(st, big = false, liveOnly = false) {
+  let cols = seriesCols(st);
+  if (liveOnly) cols = cols.filter(c => c.live);   // the balloon: five forecast days only
   if (!cols.length) return `<p class=hl>${t("fc_none")}</p>`;
   /* A paired bar is a THIN bar: its number never fits inside, so numbered bars carry
      it above (the old white-in-blue treatment died with the wide single bar). */
@@ -194,19 +195,24 @@ function barsHtml(st, big = false) {
 function tableHtml(T, n) {
   if (!T || !Array.isArray(T.vd) || !T.rows || !Array.isArray(T.rows[n])) return "";
   const vd = T.vd, rows = T.rows[n];
+  /* Column ORDER (Juanjo, 6th prompt): the day, what fell, the day's OWN forecast,
+     then the runs issued 1, 2, 3 and 4 days before — the archive order reversed from
+     v3.6's oldest-first.  All 17 cycle cells are still shown (his earlier rule: every
+     cycle that fully covered the day); only the reading order changed:
+     cells are [obs, (4d)00,06,12,18, (3d)…4 cells, (2d)…, (1d)…, own 00z] at 0…17. */
+  const COLS = [0, 17, 13, 14, 15, 16, 9, 10, 11, 12, 5, 6, 7, 8, 1, 2, 3, 4];
   const body = [];
   for (let i = vd.length - 1; i >= 0; i--) {
     const r = rows[i] || [];
     body.push(`<tr><th scope=row>${fmtDay(vd[i])}${i === vd.length - 1 ? " · " + t("today") : ""}</th>` +
-      r.map((v, k) => `<td${k === 0 ? " class=obs" : ""}>${v == null ? DASH : num(v)}</td>`).join("") +
-      "</tr>");
+      COLS.map((k, j) => `<td${j === 0 ? " class=obs" : ""}>${r[k] == null ? DASH : num(r[k])}</td>`)
+          .join("") + "</tr>");
   }
-  const groups = [4, 3, 2, 1].map(d => `<th colspan=4>${t("th_lead", d)}</th>`).join("");
-  const hours = [4, 3, 2, 1].map(() =>
+  const groups = [1, 2, 3, 4].map(d => `<th colspan=4>${t(d === 1 ? "th_ago1" : "th_ago", d)}</th>`).join("");
+  const hours = [1, 2, 3, 4].map(() =>
     "<th>00z</th><th>06z</th><th>12z</th><th>18z</th>").join("");
   return `<div class=rainwrap><table class=rain><thead>` +
     `<tr><th scope=col rowspan=2>${t("th_day")}</th>` +
-    `<th scope=col rowspan=2>${t("th_obs")}</th>${groups}` +
-    `<th scope=col rowspan=2>${t("th_lead0")}</th></tr>` +
+    `<th scope=col rowspan=2>${t("th_obs")}</th><th scope=col rowspan=2>${t("th_day0")}</th>${groups}</tr>` +
     `<tr class=hrs>${hours}</tr></thead><tbody>${body.join("")}</tbody></table></div>`;
 }

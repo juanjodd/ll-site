@@ -19,9 +19,11 @@ function renderPlace() {
   const link = st.url
     ? `<a href="${st.url}" target=_blank rel="noopener" class=hidro>${t("station_link")}</a>` : "";
   $("#place").innerHTML = `
-    <h2 style="border-color:${fcColor(rainSum(st))}">${st.name}</h2>
-    <p class="meta">${where}${link}</p>
-    <p class=hint><a href="index.html">← ${t("home_link")}</a></p>`;
+    <div class=sthead>
+      <h2 style="border-color:${fcColor(rainSum(st))}">${st.name}</h2>
+      <p class=stmeta>${where}${link}
+        <a href="index.html">← ${t("home_link")}</a></p>
+    </div>`;
   /* the big pair series: same barsHtml the balloon draws, big=true = a number on
      every bar and the day of the month beside the weekday initial */
   $("#stseries").innerHTML = `<p class=hl>${barsHtml(st, true)}</p>

@@ -172,8 +172,16 @@ footer p { font-size: .75rem; color: #555; }
 .fcday.now::before { content: ""; position: absolute; left: -.12rem; top: -.55rem;
   bottom: 0; width: 1px; background: #0f172a; opacity: .5; }
 /* fourteen columns on a 375 px screen: the line scrolls in its paragraph instead
-   of the numbers lying about the week */
-.leaflet-popup-content p.hl, #card p.hl, #stseries-wrap p.hl { overflow-x: auto; }
+   of the numbers lying about the week.  THE BALLOON IS NOT IN THAT LIST (v3.7):
+   it shows the five live days only, which always fit — no scrollbar in a balloon.
+   And every scrollable series reserves headroom for the numbers riding above the
+   bars: max-height keeps even a 100 % bar below the label line, so a wet day's
+   number can never be cut by the box (req. 6-2). */
+#card p.hl, #stseries-wrap p.hl { overflow-x: auto; }
+.fcbars { padding-inline: .6rem; }                /* edge labels hang nowhere to */
+.leaflet-popup-content .fbar, .leaflet-popup-content .obar { max-height: calc(100% - .72rem); }
+#card .fcbars .fbar, #card .fcbars .obar { max-height: calc(100% - .84rem); }
+#stseries-wrap .fbar, #stseries-wrap .obar { max-height: calc(100% - .82rem); }
 .leaflet-popup-content .fctrack { width: .98rem; height: 2.3rem; }
 .leaflet-popup-content .fcbars { gap: .15rem; }
 #card .fcbars .fctrack { width: 1.5rem; height: 3.1rem; }  /* a little larger in the card */
@@ -248,6 +256,14 @@ body.pop-open { overflow: hidden; }        /* the page waits; nothing slides asi
    "–" here means exactly what a "–" means on the balloon. */
 .station-page header.solo h1 a { color: inherit; text-decoration: none; }
 #place h2 { border-left: 6px solid #b0b8bf; padding-left: .5rem; }
+/* v3.7 (req. 6): one line — name left; province·altitude, the Hidrosur ficha and
+   Volver al inicio right; wraps below the name on narrow screens, never orphaned */
+#place .sthead { display: flex; align-items: baseline; justify-content: space-between;
+  flex-wrap: wrap; gap: .15rem .8rem; }
+#place .stmeta { display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap;
+  margin: 0; font-size: .8rem; color: #666; justify-content: flex-end; }
+#place .stmeta a { color: #1565c0; text-decoration: none; white-space: nowrap; }
+#place .stmeta a:hover { text-decoration: underline; }
 #place .meta { display: flex; justify-content: space-between; align-items: baseline;
   gap: .2rem .7rem; flex-wrap: wrap; margin: .4rem 0 .1rem; font-size: .8rem; color: #666; }
 #place .meta a { color: #1565c0; text-decoration: none; white-space: nowrap; }
