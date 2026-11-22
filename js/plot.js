@@ -91,6 +91,14 @@ function fmtDay(iso) {
   return new Date(y, m - 1, d).toLocaleDateString(locale(),
     { day: "numeric", month: "short" }).replace(/\.$/, "");
 }
+/* "Domingo 22 nov" (v4.6, Juanjo): the table's day column leads with the weekday.
+   No "hoy" mark — the series already wears that crown, and the raya says it. */
+function fmtDayWd(iso) {
+  if (!iso) return "";
+  const [y, m, d] = iso.split("-").map(Number);
+  const wd = new Date(y, m - 1, d).toLocaleDateString(locale(), { weekday: "long" });
+  return wd.charAt(0).toUpperCase() + wd.slice(1) + " " + fmtDay(iso);
+}
 const isoOf = (dt) => `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
 /* The days the forecast covers, from the pipeline's own meta (never from the
    browser clock: the labels must match the numbers on disk). */
@@ -227,7 +235,7 @@ function tableHtml(T, n) {
   const body = [];
   for (let i = vd.length - 1; i >= 0; i--) {
     const r = rows[i] || [];
-    body.push(`<tr><th scope=row>${fmtDay(vd[i])}${i === vd.length - 1 ? " · " + t("today") : ""}</th>` +
+    body.push(`<tr><th scope=row>${fmtDayWd(vd[i])}</th>` +
       r.map((v, k) => `<td${k === 0 ? " class=obs" : ""}>${v == null ? DASH : num(v)}</td>`)
           .join("") + "</tr>");
   }
