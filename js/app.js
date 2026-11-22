@@ -174,8 +174,7 @@ function renderCard(st) {
      <h2 class=goto style="border-color:${col}"><a href="station.html?n=${st.n}"
         title="${t("goto_hint")}">${st.name}</a></h2>
     ${detailLines(st)}
-    <p class="meta">${where}${link}</p>
-    <p class="hint pairh">${t("pair_hint")}</p>`;
+    <p class="meta">${where}${link}</p>`;
 }
 
 /* Directory (req. 5, v2.2): a live list of the places where rain IS forecast —

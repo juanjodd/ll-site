@@ -1,14 +1,15 @@
-/* lloverllover — station.js (v3.5, Phase 17): the page per place.
-   One file for all 294 places: station.html?n=ID renders everything from the same
-   data.json — the ten-day pair series (the balloon's picture, grown up: a number on
-   every bar), the day-by-day table (what fell beside what each morning's 00z said,
-   leads 0…4) and a zoomed map that answers "where, exactly?".  No new numbers are
-   computed here and nothing is re-fetched: plot.js owns the colours and the bars,
-   and a place that reads "–" on the map reads "–" here, because it is the same cell
-   of the same array. */
+/* lloverllover — station.js (v3.5/v3.6, Phases 17-18): the page per place.
+   One file for all 294 places: station.html?n=ID renders the ten-day pair series
+   (five closed days measured beside their 00z, five live forecast days — the
+   balloon's picture grown up, with a number on every bar), the day-by-day table
+   from table.json (what fell beside EVERY cycle that covered the whole of that
+   day: 00/06/12/18z of the four days before, plus the day's own 00z), and a
+   zoomed map that answers "where, exactly?".  No new numbers are computed here:
+   plot.js owns the colours and the bars, and a place that reads "–" on the map
+   reads "–" here, because it is the same cell of the same archive. */
 "use strict";
 
-let ST = null, smini = null;
+let ST = null, TBL = null, smini = null;
 
 function renderPlace() {
   const st = ST;
@@ -25,7 +26,10 @@ function renderPlace() {
      every bar and the day of the month beside the weekday initial */
   $("#stseries").innerHTML = `<p class=hl>${barsHtml(st, true)}</p>
     <p class="hint pairh">${t("pair_hint")}</p>`;
-  $("#sttable").innerHTML = tableHtml(st) + `<p class=hint>${t("table_note")}</p>`;
+  const table = tableHtml(TBL, st.n);
+  $("#sttable").innerHTML = table
+    ? table + `<p class=hint>${t("table_note")}</p>`
+    : `<p class=hl>${t("fc_none")}</p>`;
   const foot = DATA.models[MODEL_ACTIVE];
   $("#foot").innerHTML = `
     ${t("updated")}: <b>${DATA.generated_at_utc.replace("T", " ").replace("Z", " UTC")}</b>` +
@@ -50,6 +54,10 @@ function renderMiniMap(st) {
 
 async function bootStation() {
   await loadCommon();
+  /* v3.6: the table's all-cycles matrix is its own file — the map page never
+     pays for it, this page asks for it no-store like the numbers do. */
+  TBL = await fetch("table.json", { cache: "no-store" })
+    .then(r => (r.ok ? r.json() : null)).catch(() => null);
   applyStatic();
   measureScale();                          // the scale is the region's, never this page's alone
   const n = +new URLSearchParams(window.location.search).get("n");

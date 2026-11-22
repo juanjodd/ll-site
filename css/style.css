@@ -259,10 +259,16 @@ body.pop-open { overflow: hidden; }        /* the page waits; nothing slides asi
 #stseries-wrap .fbar b, #stseries-wrap .obar b { font-size: .62rem; }
 #stseries-wrap .fcwd { font-size: .62rem; }
 #stseries-wrap .fdash { font-size: .9rem; }
-table.rain { border-collapse: collapse; font-size: .85rem; width: 100%; }
-table.rain th, table.rain td { border: 1px solid #e4e7ea; padding: .28rem .5rem;
+/* v3.6: the table is WIDE now (one column per cycle that fully covered the day:
+   up to seventeen forecast columns) — it earns its own horizontal scroll on a
+   phone instead of squeezing numbers into unreadable slivers. */
+.rainwrap { overflow-x: auto; }
+table.rain { border-collapse: collapse; font-size: .8rem; width: 100%; min-width: 46rem; }
+table.rain th, table.rain td { border: 1px solid #e4e7ea; padding: .26rem .38rem;
   text-align: right; font-variant-numeric: tabular-nums; }
 table.rain thead th { background: #f6f8fa; font-weight: 600; white-space: nowrap; }
+table.rain thead tr.hrs th { font-size: .68rem; font-weight: 500; color: #666;
+  background: #fbfcfd; text-align: center; }
 table.rain tbody th { text-align: left; font-weight: 600; background: #fafbfc;
   white-space: nowrap; }
 table.rain td.obs { color: #1f2937; font-weight: 600; }    /* the measured day */

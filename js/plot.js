@@ -1,9 +1,10 @@
-/* lloverllover — plot.js (v3.5, Phase 17): ONE language for the rain picture, spoken by
-   the map page and by the page per place.  The helpers, the colour ramp, the log scale,
-   the paired day series (BLACK observed bar beside its BLUE forecast bar, ten days back)
-   and the station table all live here, so a number or a colour can never mean two things
-   on the same site.  It loads BEFORE app.js / station.js and owns the shared globals
-   (DATA, I18N, LANG) — those scripts must never re-declare them. */
+/* lloverllover — plot.js (v3.5/v3.6, Phases 17-18): ONE language for the rain picture,
+   spoken by the map page and by the page per place.  The helpers, the colour ramp, the
+   log scale, the paired day series (five closed days of BLACK observed beside their BLUE
+   00z, then five live forecast days) and the all-cycles station table all live here, so
+   a number or a colour can never mean two things on the same site.  It loads BEFORE
+   app.js / station.js and owns the shared globals (DATA, I18N, LANG) — those scripts
+   must never re-declare them. */
 "use strict";
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -126,16 +127,18 @@ function measureScale() {
 const barFrac = (v) => !v || v <= 0 ? 0
   : Math.min(1, Math.max(0, Math.log10(v / WET_MIN) / Math.log10(FC_MAX / WET_MIN)));
 
-/* ---------- v3.5: ten days of memory beside the forecast (Phase 17) ----------
-   ONE column per day carries a PAIR: the black bar is what the gauges closed the
-   day with (rain_daily.csv, first differences of the official year accumulations),
-   the blue bar is what was forecast for it — for a PAST day the archived own-morning
-   00z (the stable word that morning gave), for today and the days ahead the LIVE
-   newest cycle.  A day nobody could measure or archive is a "–" in its bar's colour:
-   never a zero, never smeared across neighbours.  The thin vertical rule at today
-   splits memory from forecast.  Numbers ride the live columns everywhere (that is
-   the headline the site was built for) and, on the place's own page (big=true),
-   every bar; the rest whisper through their title. */
+/* ---------- v3.5/v3.6: the ten-day picture — five remembered, five ahead ----------
+   ONE column per day; a PAST day (the five closed ones) carries a PAIR: the black
+   bar is what the gauges closed it with (rain_daily.csv, first differences of the
+   official year accumulations), the blue bar is the STABLE word that morning gave —
+   the day's own archived 00z.  Today joins the five FORECAST columns: they come
+   from the LIVE newest cycle and have no black side at all — a day that has not
+   closed is not a missing measurement.  A day nobody could measure or archive is a
+   "–" in its bar's colour: never a zero, never smeared.  The thin vertical rule at
+   today splits memory from forecast (ten columns in total, five each side).
+   Numbers ride the live columns everywhere (that is the headline the site was
+   built for) and, on the place's own page (big=true), every bar; the rest whisper
+   through their title. */
 const OBS_COLOR = "#1f2937";     // the black of "what fell"
 const DASH = "–";                // the em-dash-ish glyph of "no data"
 
@@ -146,11 +149,10 @@ function seriesCols(st) {
   const f = fcDays(st), dates = f ? fcDates() : [];
   const cols = vd.map((d, i) => {
     const r = rows[i] || [];
-    const live = !!(f && dates[0] === d);            // today: the newest cycle wins
-    return { date: d, obs: r[0] ?? null, fc: live ? f[0] : (r[1] ?? null), live, past: i < vd.length - 1 };
+    return { date: d, obs: r[0] ?? null, fc: r[1] ?? null, past: true };
   });
-  if (f) for (let k = 1; k < dates.length; k++)
-    cols.push({ date: dates[k], obs: null, fc: f[k], live: true, past: false, ahead: k });
+  if (f) for (let k = 0; k < dates.length; k++)
+    cols.push({ date: dates[k], obs: null, fc: f[k], live: true, ahead: k });
   return cols;
 }
 
@@ -167,41 +169,44 @@ function barsHtml(st, big = false) {
       (numbered ? `><b>${num(v)}</b></i>` : "></i>");
   };
   const html = cols.map(c => {
-    const when = isToday(c.date) ? t("today") : c.ahead === 1 ? t("tomorrow") : fmtDay(c.date);
-    /* A day that has not happened yet has no OBSERVED side at all — not even a "–":
-       nothing is missing there, the day simply has not fallen.  Memory (and today,
-       still being measured) pairs the two bars. */
-    const obs = c.ahead ? "" : cell(c.obs, "obs", big);
-    const title = c.ahead
+    const when = isToday(c.date) ? t("today") : c.live && c.ahead === 1 ? t("tomorrow") : fmtDay(c.date);
+    const title = c.live
       ? `${when} · ${t("k_fc")} ${c.fc == null ? DASH : num(c.fc)}`
       : `${when} · ${t("k_obs")} ${c.obs == null ? DASH : num(c.obs)}` +
-        ` · ${c.live ? t("k_fc") : t("k_fc00")} ${c.fc == null ? DASH : num(c.fc)}`;
+        ` · ${t("k_fc00")} ${c.fc == null ? DASH : num(c.fc)}`;
     const lab = big ? `${dayInitial(c.date)} ${+c.date.slice(8)}` : dayInitial(c.date);
     return `<span class="fcday${isToday(c.date) ? " now" : ""}${c.live ? " live" : " past"}` +
       `" title="${title}">` +
-      `<span class=fctrack>${obs}${cell(c.fc, "fc", big || c.live)}</span>` +
+      `<span class=fctrack>${c.live ? "" : cell(c.obs, "obs", big)}` +
+      `${cell(c.fc, "fc", big || c.live)}</span>` +
       `<span class=fcwd>${lab}</span></span>`;
   }).join("");
   return `<span class=fcbars>${html}</span>`;
 }
 
-/* The table of a place (station page): rows from TODAY backwards five days — the
-   measured day beside the archived 00z forecasts ISSUED for that same valid day
-   0, 1, 2, 3 and 4 days before (the lead is valid minus issue), straight from st.t,
-   the very numbers the balloon's past pairs come from. */
-const TABLE_DAYS = 6;
-function tableHtml(st) {
-  const vd = histDates(), rows = Array.isArray(st.t) ? st.t : [];
-  if (!vd.length) return "";
+/* The table of a place (station page, v3.6): rows from TODAY backwards five days,
+   and per row the measured day beside EVERY archived cycle whose whole days fully
+   included that valid date — the 00, 06, 12 and 18 UTC runs of each of the four
+   days before, plus the day's own 00z.  (A late run's partial day 0 never enters
+   the archive, so a column here is always a promise about a WHOLE day.)  It reads
+   table.json, not the balloon's slimmer t-rows; null = that cycle is not archived
+   — a downtime the backfill could not mend yet — drawn "-", never a zero. */
+function tableHtml(T, n) {
+  if (!T || !Array.isArray(T.vd) || !T.rows || !Array.isArray(T.rows[n])) return "";
+  const vd = T.vd, rows = T.rows[n];
   const body = [];
-  for (let i = vd.length - 1; i >= Math.max(0, vd.length - TABLE_DAYS); i--) {
+  for (let i = vd.length - 1; i >= 0; i--) {
     const r = rows[i] || [];
     body.push(`<tr><th scope=row>${fmtDay(vd[i])}${i === vd.length - 1 ? " · " + t("today") : ""}</th>` +
       r.map((v, k) => `<td${k === 0 ? " class=obs" : ""}>${v == null ? DASH : num(v)}</td>`).join("") +
       "</tr>");
   }
-  const heads = [t("th_obs"), t("th_lead0"), ...[1, 2, 3, 4].map(d => t("th_lead", d))];
-  return `<table class=rain><thead><tr><th scope=col>${t("th_day")}</th>` +
-    heads.map(h => `<th scope=col>${h}</th>`).join("") +
-    `</tr></thead><tbody>${body.join("")}</tbody></table>`;
+  const groups = [4, 3, 2, 1].map(d => `<th colspan=4>${t("th_lead", d)}</th>`).join("");
+  const hours = [4, 3, 2, 1].map(() =>
+    "<th>00z</th><th>06z</th><th>12z</th><th>18z</th>").join("");
+  return `<div class=rainwrap><table class=rain><thead>` +
+    `<tr><th scope=col rowspan=2>${t("th_day")}</th>` +
+    `<th scope=col rowspan=2>${t("th_obs")}</th>${groups}` +
+    `<th scope=col rowspan=2>${t("th_lead0")}</th></tr>` +
+    `<tr class=hrs>${hours}</tr></thead><tbody>${body.join("")}</tbody></table></div>`;
 }
