@@ -1,5 +1,6 @@
-/* lloverllover — station.js (v3.5→v3.8, Phases 17-20): the page per place.
-   One file for all 294 places: station.html?n=ID renders the ten-day pair series
+/* lloverllover — station.js (v3.5→v3.9, Phases 17-21): the page per place.
+   One file for all 294 places: station.html?e=<name> (or the old ?n=ID) renders
+   the ten-day pair series
    (five closed days measured beside their 00z, five live forecast days — the
    balloon's picture grown up, with a number on every bar), the day-by-day table
    from table.json (what fell beside EVERY cycle that covered the whole of that
@@ -30,12 +31,20 @@ function renderPlace() {
       <h2 style="border-color:${fcColor(rainSum(st))}">${st.name}</h2>
       <p class=stmeta><span class=stwhere>${where}${link}</span>
         <a href="index.html">← ${t("home_link")}</a></p>
-    </div>
-    <div id=stacc>${accRows(st)}</div>`;
-  /* the big pair series: same barsHtml the balloon draws, big=true = a number on
-     every bar and the day of the month beside the weekday initial */
+    </div>`;
+  /* 8th prompt: the hint says exactly what black and blue are — observed at THIS
+     place's SAIH network (linked), forecast by the CEPPM's model (linked); and the
+     two hydrological-year accumulations close the section, under the bars, in the
+     same order the home card shows them. */
+  const NET = { hidrosur: ["net_hidrosur", "https://www.redhidrosurmedioambiente.es/saih/"],
+                chg:      ["net_chg", "https://www.chguadalquivir.es/saih/"] };
+  const net = NET[st.net] || NET.hidrosur;
+  const netlink = `<a href="${net[1]}" target=_blank rel=noopener>${t(net[0])}</a>`;
+  const ceppmlink = `<a href="https://www.ecmwf.int/${LANG === "es" ? "es/" : ""}" ` +
+    `target=_blank rel=noopener>${t("ceppm")}</a>`;
   $("#stseries").innerHTML = `<p class=hl>${barsHtml(st, true)}</p>
-    <p class="hint pairh">${t("pair_hint")}</p>`;
+    <p class="hint pairh">${t("pair_hint", netlink, ceppmlink)}</p>
+    <div id=stacc>${accRows(st)}</div>`;
   const table = tableHtml(TBL, st.n);
   $("#sttable").innerHTML = table
     ? table + `<p class=hint>${t("table_note")}</p>`
@@ -70,8 +79,11 @@ async function bootStation() {
     .then(r => (r.ok ? r.json() : null)).catch(() => null);
   applyStatic();
   measureScale();                          // the scale is the region's, never this page's alone
-  const n = +new URLSearchParams(window.location.search).get("n");
-  ST = DATA.stations.find(s => s.n === n) || null;
+  const q = new URLSearchParams(window.location.search);
+  /* 8th prompt: the doors now carry the place's NAME (?e=charco-redondo-embalse);
+     the old numeric ?n=ID keeps working, so nothing ever written 404s. */
+  const want = (q.get("e") || "").trim().toLowerCase();
+  ST = DATA.stations.find(s => q.has("n") ? s.n === +q.get("n") : s.slug === want) || null;
   if (!ST) {
     $("#place").innerHTML = `<h2>${t("not_found")}</h2>
       <p class=hint><a href="index.html">← ${t("home_link")}</a></p>`;

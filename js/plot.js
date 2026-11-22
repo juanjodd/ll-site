@@ -60,6 +60,12 @@ const norm = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCa
 const fcDays = (st) => { const a = st.fc ? st.fc[MODEL_ACTIVE] : null; return Array.isArray(a) ? a : null; };
 /* "MÁLAGA" -> "Málaga" — nothing on this site is ALL CAPS (req. 4) */
 const titleCase = (s) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+const dayOfYearLong = (iso, year) => {   // ES "el 21 de noviembre de 2025", EN "21 November 2025"
+  const [y, m, d] = iso.split("-").map(Number);
+  const mon = new Date(y, m - 1, d).toLocaleDateString(locale(), { month: "long" });
+  return t("day_of_year", d, LANG === "en" ? mon.charAt(0).toUpperCase() + mon.slice(1) : mon, year);
+};
+
 /* "2026-11-15" -> "15 nov" / "15 Nov", no timezone surprises: build from parts */
 function fmtDay(iso) {
   if (!iso) return "";
@@ -175,7 +181,7 @@ function barsHtml(st, big = false, liveOnly = false) {
       ? `${when} · ${t("k_fc")} ${c.fc == null ? DASH : num(c.fc)}`
       : `${when} · ${t("k_obs")} ${c.obs == null ? DASH : num(c.obs)}` +
         ` · ${t("k_fc00")} ${c.fc == null ? DASH : num(c.fc)}`;
-    const lab = big ? `${dayInitial(c.date)} ${+c.date.slice(8)}` : dayInitial(c.date);
+    const lab = dayInitial(c.date);   // 8th prompt: initials only, same as inicio — even big
     return `<span class="fcday${isToday(c.date) ? " now" : ""}${c.live ? " live" : " past"}` +
       `" title="${title}">` +
       `<span class=fctrack>${c.live ? "" : cell(c.obs, "obs", big)}` +
@@ -226,7 +232,7 @@ function accRows(st) {
   const shown = (v) => v == null ? "—" : num(v);       // a missing value never says "— litros"
   const D0 = (fcDates()[0] || "");
   const hyYear = +D0.slice(0, 4) - (D0.slice(5, 7) < "10" ? 1 : 0);
-  const lastYear = t("day_of_year", fmtDay(D0), hyYear - 1);
+  const lastYear = dayOfYearLong(D0, hyYear - 1);
   const qw = Math.max(...[st.acc, st.accP].map(v => shown(v).length));
   const row = (v, rest) => `<p class="qrow"><b>${shown(v)}</b>` +
     `<i> ${v == null ? "" : L + " "}${rest}</i></p>`;

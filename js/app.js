@@ -137,7 +137,7 @@ function detailLines(st, balloon = false) {
   const hasP = "accP" in st;
   const D0 = dates[0] || "";
   const hyYear = +D0.slice(0, 4) - (D0.slice(5, 7) < "10" ? 1 : 0);
-  const lastYear = t("day_of_year", fmtDay(D0), hyYear - 1);
+  const lastYear = dayOfYearLong(D0, hyYear - 1);
   const shown = (v) => v == null ? "—" : num(v);        // a missing value never says "— litros"
   /* the number column is as wide as the widest number of THIS place (in digits: `ch`
      is one tabular digit, so the box can never clip what goes in it) */
@@ -155,7 +155,7 @@ function detailLines(st, balloon = false) {
 
 function popupHtml(st) {
   /* the name is a link to the place's page (6th prompt) */
-  return `<b><a href="station.html?n=${st.n}" title="${t("goto_hint")}">${st.name}</a></b>` +
+  return `<b><a href="station.html?e=${st.slug}" title="${t("goto_hint")}">${st.name}</a></b>` +
     detailLines(st, true);
 }
 
@@ -173,7 +173,7 @@ function renderCard(st) {
   const link = st.url
     ? `<a href="${st.url}" target=_blank rel="noopener" class=hidro>${t("station_link")}</a>` : "";
   $("#card").innerHTML = `
-     <h2 class=goto style="border-color:${col}"><a href="station.html?n=${st.n}"
+     <h2 class=goto style="border-color:${col}"><a href="station.html?e=${st.slug}"
         title="${t("goto_hint")}">${st.name}</a></h2>
     ${detailLines(st)}
     <p class="meta">${where}${link}</p>`;
@@ -191,7 +191,7 @@ function renderDirectory() {
   /* the amount in brackets: compact, and it reads as one line per place */
   const val = (x) => `<span class=val>(${num(x)} ${t("litre_short")})</span>`;
   /* v3.5 (Juanjo): a row's NAME is a door — it opens the place's own page. */
-  const row = (s) => `<li data-n="${s.n}"><a href="station.html?n=${s.n}" title="${t("goto_hint")}">` +
+  const row = (s) => `<li data-n="${s.n}"><a href="station.html?e=${s.slug}" title="${t("goto_hint")}">` +
     `${dot(rainSum(s))}<span class=nm>${s.name}</span>${val(rainSum(s))}</a></li>`;
 
   const wet = DATA.stations.filter(s => rainSum(s) >= WET_MIN);
@@ -212,7 +212,8 @@ function renderDirectory() {
         <ul>${list.map(row).join("")}</ul></details>`);
 
   $("#directory").innerHTML = provHtml.join("");
-  /* v3.5: the rows are plain links now (station.html?n=…) — no click listener, and
+  /* v3.5: the rows are plain links now (station.html?e=<name>, v3.9) — no click
+     listener, and
      middle-click / "open in new tab" work because they always did what they look like. */
 }
 

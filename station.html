@@ -8,12 +8,13 @@
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
   <!-- ?v= is the cache-buster: bump it here (all three pages) whenever the
        CSS, JS or i18n.json changes — see js/plot.js. -->
-  <link rel="stylesheet" href="css/style.css?v=3.8">
+  <link rel="stylesheet" href="css/style.css?v=3.9">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>🌧️</text></svg>">
 </head>
 <body class="station-page">
   <!-- v3.5 (Phase 17): the page per place.  ONE file serves all 294: station.js reads
-       ?n=ID and renders the ten-day pair series, the day-by-day table and a zoomed
+       ?e=<name> (or the legacy ?n=ID) and renders the ten-day pair series, the
+       day-by-day table and a zoomed
        map, all from the same data.json the map page uses.  The header keeps only the
        logo (which is the way back) and the language toggle. -->
   <header class=solo>
@@ -27,12 +28,12 @@
     <section id="place"><p class="hint">…</p></section>
 
     <section id="stseries-wrap">
-      <h2 data-i18n="series_title">Diez días de memoria, y lo que queda previsto</h2>
+      <h2 data-i18n="series_title">Lluvia observada y prevista</h2>
       <div id="stseries"></div>
     </section>
 
     <section id="sttable-wrap">
-      <h2 data-i18n="table_title">Día a día</h2>
+      <h2 data-i18n="table_title">Más detalles</h2>
       <div id="sttable"></div>
     </section>
 
@@ -42,7 +43,7 @@
   <footer><p id="foot">…</p></footer>
 
   <script src="vendor/leaflet/leaflet.js"></script>
-  <script src="js/plot.js?v=3.8"></script>
-  <script src="js/station.js?v=3.8"></script>
+  <script src="js/plot.js?v=3.9"></script>
+  <script src="js/station.js?v=3.9"></script>
 </body>
 </html>
