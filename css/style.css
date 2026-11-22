@@ -293,6 +293,20 @@ body.pop-open { overflow: hidden; }        /* the page waits; nothing slides asi
 #stseries-wrap .fbar b, #stseries-wrap .obar b { font-size: .62rem; }
 #stseries-wrap .fcwd { font-size: .62rem; }
 #stseries-wrap .fdash { font-size: .9rem; }
+/* v4.5 (Juanjo): on any screen from 480 px up there is room to spare — the ten
+   columns SPREAD across the box (flex, equal share, capped so an ultrawide
+   doesn't stretch them into slabs) and grow taller.  Below 480 px nothing
+   changes: the fixed 2.05rem columns and the sideways scroll that a phone
+   earns honestly.  The balloon and the map-page card are not in this rule's
+   reach — they never scroll and never needed to grow. */
+@media (min-width: 30rem) {
+  #stseries-wrap .fcbars { display: flex; width: 100%; max-width: 52rem;
+    margin-inline: auto; }
+  #stseries-wrap .fcbars .fcday { flex: 1 1 0; }
+  #stseries-wrap .fctrack { width: 100%; max-width: 4.5rem; height: 4.6rem; }
+  #stseries-wrap .fbar b, #stseries-wrap .obar b { font-size: .72rem; }
+  #stseries-wrap .fcwd { font-size: .72rem; }
+}
 /* v3.6: the table is WIDE now (one column per cycle that fully covered the day:
    up to seventeen forecast columns) — it earns its own horizontal scroll on a
    phone instead of squeezing numbers into unreadable slivers. */
