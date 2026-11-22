@@ -48,8 +48,8 @@ function renderPlace() {
     : `<p class=hl>${t("fc_none")}</p>`;
   const foot = DATA.models[MODEL_ACTIVE];
   $("#foot").innerHTML = `
-    ${t("updated")}: <b>${DATA.generated_at_utc.replace("T", " ").replace("Z", " UTC")}</b>` +
-    (foot ? ` · ${t("model")}: ${foot.product}, ${t("cycle")} ${foot.cycle_utc}` : "") + `<br>
+    ${t("updated")}: <b>${fmtStamp(DATA.generated_at_utc)}</b>` +
+    (foot ? ` · ${t("fc_last")}: ${fmtDayMon(foot.cycle_utc)} ${foot.cycle_utc.slice(11, 13)}z` : "") + `<br>
     ${t("sources")}<br>
     <a href="https://www.openstreetmap.org/copyright" rel="noopener">© OpenStreetMap</a>
      · <a href="about.html">${t("about_link")}</a>`;

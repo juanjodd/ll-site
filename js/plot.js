@@ -50,6 +50,11 @@ const t = (k, ...args) => {
   return s;
 };
 const locale = () => LANG === "es" ? "es-ES" : "en-GB";
+/* v4.3 stamp formatters: the footer's three clocks, one voice.  No seconds, no ISO
+   tails; the month name follows the page language ("22 nov" / "22 Nov"). */
+const fmtStamp = (iso) => iso.slice(0, 16).replace("T", " ") + " UTC";
+const fmtDayMon = (iso) => { const [y, m, d] = iso.slice(0, 10).split("-").map(Number);
+  return `${d} ${new Date(y, m - 1, 15).toLocaleDateString(locale(), { month: "short" }).replace(/\.$/, "")}`; };
 const num = (v, d = 1) => v == null ? "—"
   : v.toLocaleString(locale(), { maximumFractionDigits: d });
 const norm = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();

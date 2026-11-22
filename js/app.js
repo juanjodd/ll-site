@@ -333,14 +333,13 @@ function fcWindowLabel() {
 
 function renderFooter() {
   const m = DATA.models[MODEL_ACTIVE];
-  const span = fcWindowLabel() ? ` · ${fcWindowLabel()}` : "";
+  const span = fcWindowLabel() ? ` · ${t("foot_days")} ${fcWindowLabel()}` : "";
   const [hyA, hyB] = DATA.hydro_year.split("/");
   $("#hy").textContent = `${hyA}/${hyB}`;        // v3.1: the header says 2026/2027, not 2026/27
   $("#foot").innerHTML = `
-    ${t("updated")}: <b>${DATA.generated_at_utc.replace("T", " ").replace("Z", " UTC")}</b>
-    ${m ? ` · ${t("model")}: ${m.product}, ${t("cycle")} ${m.cycle_utc}${span}` : ""}
-    ${m ? ` · ${t("fc_note")}` : ""}
-    ${DATA.observed_updated_at ? ` · ${t("obs_stamp")} ${DATA.observed_updated_at}` : ""}<br>
+    ${t("updated")}: <b>${fmtStamp(DATA.generated_at_utc)}</b>
+    ${m ? ` · ${t("fc_last")}: ${fmtDayMon(m.cycle_utc)} ${m.cycle_utc.slice(11, 13)}z${span}` : ""}
+    ${DATA.observed_updated_at ? ` · ${t("foot_gauges")} ${fmtDayMon(DATA.observed_updated_at)} ${DATA.observed_updated_at.slice(11, 16)}` : ""}<br>
     ${t("sources")}<br>
     <a href="https://www.openstreetmap.org/copyright" rel="noopener">© OpenStreetMap</a>
      · <a href="about.html">${t("about_link")}</a>`;
