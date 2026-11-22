@@ -311,14 +311,16 @@ body.pop-open { overflow: hidden; }        /* the page waits; nothing slides asi
    up to seventeen forecast columns) — it earns its own horizontal scroll on a
    phone instead of squeezing numbers into unreadable slivers. */
 .rainwrap { overflow-x: auto; }
-table.rain { border-collapse: collapse; font-size: .8rem; width: 100%; min-width: 46rem; }
+table.rain { border-collapse: collapse; font-size: .8rem; width: 100%; min-width: 42rem; }
 table.rain th, table.rain td { border: 1px solid #e4e7ea; padding: .26rem .38rem;
   text-align: right; font-variant-numeric: tabular-nums; }
 table.rain thead th { background: #f6f8fa; font-weight: 600; white-space: nowrap; }
 table.rain thead tr.hrs th { font-size: .68rem; font-weight: 500; color: #666;
   background: #fbfcfd; text-align: center; }
 table.rain tbody th { text-align: left; font-weight: 600; background: #fafbfc;
-  white-space: nowrap; }
+  white-space: nowrap; padding-right: .5rem; }   /* "Dom 22 nov" is a 3-letter
+  weekday now (v4.7): the label gave back ~3rem, so the table's floor shrank
+  with it and the twenty number columns took the space */
 table.rain td.obs { color: #1f2937; font-weight: 600; }    /* the measured day */
 #stmap { height: 340px; margin: .9rem .75rem .3rem; }
 

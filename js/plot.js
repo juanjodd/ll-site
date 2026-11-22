@@ -91,13 +91,16 @@ function fmtDay(iso) {
   return new Date(y, m - 1, d).toLocaleDateString(locale(),
     { day: "numeric", month: "short" }).replace(/\.$/, "");
 }
-/* "Domingo 22 nov" (v4.6, Juanjo): the table's day column leads with the weekday.
-   No "hoy" mark — the series already wears that crown, and the raya says it. */
+/* "Dom 22 nov" (v4.6, Juanjo; three letters since v4.7): the table's day column
+   leads with the weekday.  No "hoy" mark — the series already wears that crown,
+   and the raya says it.  Intl's short form is "dom." in some engines and "Mon"
+   in others: strip the dot, raise the first letter. */
 function fmtDayWd(iso) {
   if (!iso) return "";
   const [y, m, d] = iso.split("-").map(Number);
-  const wd = new Date(y, m - 1, d).toLocaleDateString(locale(), { weekday: "long" });
-  return wd.charAt(0).toUpperCase() + wd.slice(1) + " " + fmtDay(iso);
+  const wd = new Date(y, m - 1, d).toLocaleDateString(locale(), { weekday: "short" });
+  const cap = wd.replace(/\.$/, "");
+  return cap.charAt(0).toUpperCase() + cap.slice(1) + " " + fmtDay(iso);
 }
 const isoOf = (dt) => `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
 /* The days the forecast covers, from the pipeline's own meta (never from the
