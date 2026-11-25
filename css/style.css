@@ -34,6 +34,12 @@ header .sub .hy { flex: none; }
 #lang button:first-child { border-radius: .3rem 0 0 .3rem; }
 #lang button:last-child { border-radius: 0 .3rem .3rem 0; border-left: 0; }
 #lang button[aria-pressed="true"] { background: #1a1a1a; color: #fff; }
+/* v5.1: the depth toggle is not a language — it is its own pill beside the pair
+   (same border family), and when ON it wears the site's blue, not the black:  */
+#lang button[data-adv] { margin-left: .75rem; border-left: 1px solid #bbb;
+  border-radius: .3rem; }
+#lang button[data-adv][aria-pressed="true"] { background: #08519c; border-color: #08519c;
+  color: #fff; }
 
 #map { height: 52vh; width: 100%; }
 #legend { display: flex; flex-wrap: wrap; gap: .45rem; align-items: center;
@@ -333,6 +339,10 @@ table.rain tbody th { text-align: left; font-weight: 600; background: #fafbfc;
   weekday now (v4.7): the label gave back ~3rem, so the table's floor shrank
   with it and the twenty number columns took the space */
 table.rain td.obs { color: #1f2937; font-weight: 600; }    /* the measured day */
+table.rain td.fcv { color: #08519c; font-weight: 600; }    /* the latest run's word (v5.1 basic) */
+/* v5.1 BASIC table: two honest columns — day and mm — so the wide-window rule below
+   never applies; the list must not scroll sideways on a phone. */
+table.rain.simple { min-width: 0; }
 #stmap { height: 340px; margin: .9rem .75rem .3rem; }
 
 /* ---------- the family page (puerto-del-barco.html, 9th prompt) ---------- */

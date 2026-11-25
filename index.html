@@ -9,7 +9,7 @@
   <!-- ?v= is the cache-buster: bump it here (both files, and about.html) whenever the
        CSS, JS or i18n.json changes, or a returning visitor keeps serving the old site
        from the browser cache.  app.js reads this version back off its own tag. -->
-  <link rel="stylesheet" href="css/style.css?v=5.0">
+  <link rel="stylesheet" href="css/style.css?v=5.1">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>🌧️</text></svg>">
 </head>
 <body>
@@ -30,6 +30,10 @@
     </form>
     <nav id="lang" aria-label="Language">
       <button data-lang="es">ES</button><button data-lang="en">EN</button>
+      <!-- v5.1: the DEPTH toggle, beside the language pair but a different kind of
+           choice: avanzado switches the remembered days from one black bar to the
+           black/blue comparison of every archived cycle (plot.js owns ADV) -->
+      <button data-adv data-i18n="adv" data-i18n-title="adv_hint">avanzado</button>
     </nav>
     <!-- v3.1: ONE subtitle line for the tagline and the hydrological year (the number is
          still filled in by renderFooter(), from data.json).  v3.2: no separator — CSS puts
@@ -96,7 +100,7 @@
   <footer><p id="foot">…</p></footer>
 
   <script src="vendor/leaflet/leaflet.js"></script>
-  <script src="js/plot.js?v=5.0"></script>
-  <script src="js/app.js?v=5.0"></script>
+  <script src="js/plot.js?v=5.1"></script>
+  <script src="js/app.js?v=5.1"></script>
 </body>
 </html>

@@ -3,8 +3,8 @@
    log scale, the paired day series (five closed days of BLACK observed beside their BLUE
    00z, then five live forecast days) and the all-cycles station table all live here, so
    a number or a colour can never mean two things on the same site.  It loads BEFORE
-   app.js / station.js and owns the shared globals (DATA, I18N, LANG) — those scripts
-   must never re-declare them. */
+   app.js / station.js and owns the shared globals (DATA, I18N, LANG, ADV) — those
+   scripts must never re-declare them. */
 "use strict";
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -18,6 +18,16 @@ const VER = (document.currentScript &&
   (document.currentScript.src.match(/[?&]v=([^&]+)/) || [])[1]) || "dev";
 
 let DATA = null, I18N = null, LANG = localStorage.getItem("llo_lang") || "es";
+/* v5.1: the site speaks two DEPTHS.  BASIC (the default) answers only "how much rain
+   fell / will fall": the closed days show the measurement alone, today and the next
+   four the word of the LATEST run — exactly what the balloon has always drawn, no
+   forecast-against-observation comparison anywhere.  ADVANCED adds the verification
+   layer for the curious: the archived forecast of EVERY cycle beside each measurement
+   (the picture of v3.6…v5.0).  Like the language, the choice lives in localStorage
+   ("llo_adv"), shared by the map page and the place pages.  Nothing about it is
+   server-side: build.py bakes both layers into the JSONs and this flag only chooses
+   what the bars and the table draw. */
+let ADV = localStorage.getItem("llo_adv") === "1";
 
 /* The two files every page needs: i18n travels with the code (?v=), the numbers never do. */
 async function loadCommon() {
@@ -36,11 +46,25 @@ function applyStatic() {
   $$("[data-i18n-ph]").forEach(e => { e.placeholder = t(e.dataset.i18nPh); });
   $$("[data-i18n-title]").forEach(e => { e.title = t(e.dataset.i18nTitle); });
   $$("[data-i18n-aria]").forEach(e => { e.setAttribute("aria-label", t(e.dataset.i18nAria)); });
-  $$("#lang button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === LANG)));
+  /* v5.1: the depth toggle shares the nav but is NOT a language — [data-lang] keeps
+     the ES/EN pressed-state sweep to its own two buttons; #adv answers only to ADV */
+  $$("#lang button[data-lang]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === LANG)));
+  $$("#lang button[data-adv]").forEach(b => b.setAttribute("aria-pressed", String(ADV)));
   /* the player has no visible label any more (req. 8, v2.2), but its accessible
      name still follows the language */
   const vf = $("#video-frame");
   if (vf) vf.title = t("video_title");
+}
+
+/* v5.1: ONE binder for the depth toggle, used by both data pages.  The rerender
+   callback redraws whatever the mode changes on that page (the card's series; the
+   place page's series and table); applyStatic first, so the button's own label,
+   title and pressed state speak again. */
+function bindAdv(rerender) {
+  $$("#lang button[data-adv]").forEach(b => b.addEventListener("click", () => {
+    ADV = !ADV; localStorage.setItem("llo_adv", ADV ? "1" : "0");
+    applyStatic(); rerender();
+  }));
 }
 
 /* ---------- helpers ---------- */
@@ -173,7 +197,8 @@ const barFrac = (v) => !v || v <= 0 ? 0
    today splits memory from forecast (ten columns in total, five each side).
    Numbers ride the live columns everywhere (that is the headline the site was
    built for) and, on the place's own page (big=true), every bar; the rest whisper
-   through their title. */
+   through their title.  v5.1: the blue half of a remembered PAIR is a comparison,
+   so BASIC mode keeps the black bar alone; ADVANCED is what draws the pair. */
 const OBS_COLOR = "#1f2937";     // the black of "what fell"
 const DASH = "–";                // the em-dash-ish glyph of "no data"
 
@@ -209,27 +234,59 @@ function barsHtml(st, big = false, liveOnly = false) {
     const title = c.live
       ? `${when} · ${t("k_fc")} ${c.fc == null ? DASH : num(c.fc)}`
       : `${when} · ${t("k_obs")} ${c.obs == null ? DASH : num(c.obs)}` +
-        ` · ${t("k_fc00")} ${c.fc == null ? DASH : num(c.fc)}`;
+        (ADV ? ` · ${t("k_fc00")} ${c.fc == null ? DASH : num(c.fc)}` : "");
     const lab = dayInitial(c.date);   // 8th prompt: initials only, same as inicio — even big
+    /* v5.1: in BASIC a remembered day is JUST the black bar — no morning word to
+       compare it against (that is what the balloon has always shown for the live
+       days; here the same restraint speaks for the past).  ADVANCED brings the
+       pair back: black beside blue, gauge against the archived 00z. */
     return `<span class="fcday${isToday(c.date) ? " now" : ""}${c.live ? " live" : " past"}` +
       `" title="${title}">` +
       `<span class=fctrack>${c.live ? "" : cell(c.obs, "obs", big)}` +
-      `${cell(c.fc, "fc", big || c.live)}</span>` +
+      `${c.live || ADV ? cell(c.fc, "fc", big || c.live) : ""}</span>` +
       `<span class=fcwd>${lab}</span></span>`;
   }).join("");
   return `<span class=fcbars>${html}</span>`;
 }
 
-/* The table of a place (station page, v3.6): rows from TODAY backwards five days,
-   and per row the measured day beside EVERY archived cycle whose whole days fully
-   included that valid date — the 00, 06, 12 and 18 UTC runs of each of the four
-   days before, plus the day's own 00z.  (A late run's partial day 0 never enters
-   the archive, so a column here is always a promise about a WHOLE day.)  It reads
-   table.json, not the balloon's slimmer t-rows; null = that cycle is not archived
-   — a downtime the backfill could not mend yet — drawn "-", never a zero. */
-function tableHtml(T, n) {
+/* The table of a place (station page, v3.6; v5.1 speaks both depths).
+   ADVANCED — the verification picture: rows from today backwards as far as the
+   measured ledger reaches, and per row the measured day beside EVERY archived cycle
+   whose whole days fully included that valid date — the 00, 06, 12 and 18 UTC runs
+   of each of the four days before, plus the day's own 00z.  (A late run's partial
+   day 0 never enters the archive, so a column here is always a promise about a WHOLE
+   day.)  Days older than the five keep only what the build still ships in full (the
+   measurement and the stable own-day 00z) — the rest draw "–".
+   BASIC — no comparison: ONE number per day.  Today and the next four carry the word
+   of the LATEST run (the balloon's numbers, read straight from data.json); the closed
+   days carry what fell, as far back as the ledger remembers.  Two columns, no sideways
+   scroll: on a phone it reads like the list of days it is.
+   It reads table.json, not the balloon's slimmer t-rows; null = that cycle is not
+   archived — a downtime the backfill could not mend yet — drawn "-", never a zero. */
+function tableHtml(T, n, st) {
   if (!T || !Array.isArray(T.vd) || !T.rows || !Array.isArray(T.rows[n])) return "";
   const vd = T.vd, rows = T.rows[n];
+  if (!ADV) {
+    const live = (st && fcDays(st)) || [], fdates = fcDates();
+    const body = [];
+    /* the days ahead first (newest promise on top of the pile), then the row of
+       today — whose number IS the live day 0 while the day is open — then memory */
+    for (let k = Math.min(fdates.length, live.length) - 1; k >= 1; k--)
+      body.push(`<tr><th scope=row>${fmtDayWd(fdates[k])}</th>` +
+        `<td class=fcv title="${t("k_fc")} · ${t("fc_last")}">` +
+        `${live[k] == null ? DASH : num(live[k])}</td></tr>`);
+    for (let i = vd.length - 1; i >= 0; i--) {
+      const v = (rows[i] || [])[0];
+      const isOpen = i === vd.length - 1 && v == null && live.length;   // today: still unwritten
+      body.push(`<tr><th scope=row>${fmtDayWd(vd[i])}</th>` +
+        `<td class="${isOpen ? "fcv" : "obs"}"` +
+        ` title="${isOpen ? t("k_fc") + " · " + t("fc_last") : t("k_obs")}">` +
+        `${(isOpen ? live[0] : v) == null ? DASH : num(isOpen ? live[0] : v)}</td></tr>`);
+    }
+    const head = `<tr><th scope=col>${t("th_day")}</th><th scope=col>${t("th_obs")}</th></tr>`;
+    return `<div class=rainwrap><table class="rain simple"><thead>${head}</thead>` +
+      `<tbody>${body.join("")}</tbody></table></div>`;
+  }
   /* Cell ORDER is the build's (6th + 7th prompts): the day, what fell, then FIVE
      groups — the day's OWN runs first, then 1…4 days before — and every group
      reads 18z 12z 06z 00z, newest hour first.  The own-day 06/12/18z numbers are
@@ -237,7 +294,11 @@ function tableHtml(T, n) {
      that can speak for it); nothing is reordered here, index k is cell k. */
   const body = [];
   for (let i = vd.length - 1; i >= 0; i--) {
-    const r = rows[i] || [];
+    const r0 = rows[i] || [];
+    /* the extended memory rows arrive THIN (measured + own-day 00z only): seat the
+       00z in its own group's last column and let the cycle columns it never had
+       read "–" — truthfully: those runs are not in the file. */
+    const r = r0.length === 2 ? [r0[0], null, null, null, r0[1]] : r0;
     body.push(`<tr><th scope=row>${fmtDayWd(vd[i])}</th>` +
       r.map((v, k) => `<td${k === 0 ? " class=obs" : ""}>${v == null ? DASH : num(v)}</td>`)
           .join("") + "</tr>");

@@ -42,9 +42,9 @@ function renderPlace() {
     `target=_blank rel=noopener>${t("ceppm")}</a>`;
   $("#stseries").innerHTML = `<p class=hl>${barsHtml(st, true)}</p>
     <p class="hint pairh">${t("pair_hint", netlink, ceppmlink)}</p>`;
-  const table = tableHtml(TBL, st.n);
+  const table = tableHtml(TBL, st.n, st);
   $("#sttable").innerHTML = table
-    ? table + `<p class=hint>${t("table_note")}</p>`
+    ? table + `<p class=hint>${t(ADV ? "table_note" : "table_note_basic")}</p>`
     : `<p class=hl>${t("fc_none")}</p>`;
   const foot = DATA.models[MODEL_ACTIVE];
   $("#foot").innerHTML = `
@@ -91,11 +91,15 @@ async function bootStation() {
   }
   renderPlace();
   renderMiniMap(ST);
-  $$("#lang button").forEach(b => b.addEventListener("click", () => {
+  $$("#lang button[data-lang]").forEach(b => b.addEventListener("click", () => {
     LANG = b.dataset.lang; localStorage.setItem("llo_lang", LANG);
     applyStatic(); renderPlace();          // words, numbers and initials in the new language
     if (smini) smini.invalidateSize();
   }));
+  bindAdv(() => {                          // v5.1: the same page, one depth deeper
+    renderPlace();
+    if (smini) smini.invalidateSize();     // (the series box grew or shrank)
+  });
 }
 
 bootStation();

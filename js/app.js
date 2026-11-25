@@ -442,7 +442,7 @@ async function boot() {
      click-to-zoom listeners died with it: an anchor needs no delegation, no
      keydown handler and no tabindex; it has always done all three by itself. */
 
-  $$("#lang button").forEach(b => b.addEventListener("click", () => {
+  $$("#lang button[data-lang]").forEach(b => b.addEventListener("click", () => {
     LANG = b.dataset.lang; localStorage.setItem("llo_lang", LANG);
     applyStatic(); renderLegend(); renderFooter(); renderCard(selected);
     renderDirectory();                       // bar numbers, initials and copy in EN
@@ -451,6 +451,10 @@ async function boot() {
     for (const st of DATA.stations)          // open balloons translate too
       if (markers[st.n]) markers[st.n].setPopupContent(popupHtml(st));
   }));
+  /* v5.1: the depth toggle.  Only the card's remembered days change skin here (the
+     balloon has always shown the five live days alone — basic by nature); the open
+     balloon keeps the same numbers either way, so nothing else needs a redraw. */
+  bindAdv(() => renderCard(selected));
 }
 
 /* ---------- the intro video (req. 8, v2.2) ----------
