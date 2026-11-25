@@ -7,6 +7,12 @@ h1 span { color: #4393c3; }  /* mid-tone of the marker ramp — quiet */
 h2 { font-size: 1rem; margin: .2rem 0; }
 a { color: #0b5fa5; }
 button { font: inherit; }
+/* The toggle pages (about, puerto-del-barco) hide one language's elements with the
+   `hidden` attribute — but a [hidden] is only a UA default, and any author rule that
+   sets `display` on the element beats it (this site's `#place .stwhere { display:
+   inline-flex }` made the English where-line show on the Spanish page).  Make hidden
+   mean hidden, once and for all, whatever a later rule does with display. */
+[hidden] { display: none !important; }
 
 header, footer, main > section, #legend { padding-left: .75rem; padding-right: .75rem; }
 header { display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem;
