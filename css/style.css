@@ -331,12 +331,13 @@ table.rain td.obs { color: #1f2937; font-weight: 600; }    /* the measured day *
 #stmap { height: 340px; margin: .9rem .75rem .3rem; }
 
 /* ---------- the family page (puerto-del-barco.html, 9th prompt) ---------- */
-/* ONE column, everything centred, top down: the dedication, the picture, its line of
-   caption, and BELOW them the map — as big as the map on any page per place, because this
-   page is one of those pages.  The image keeps its own
+/* ONE column, everything centred, top down (v4.9, Juanjo's order): the words — origin
+   first, then the story — the map, the picture with its caption, and the dedication
+   LAST.  The image keeps its own
    width and height so the browser reserves the space (no jump), and it is never upscaled past
    40rem: the point of the small, soft copy is that it stays a memory, not a file to be mined.
-   The words are centred too — a dedication reads above a photograph, not in its corner. */
+   The story reads centred; only the dedication breaks the symmetry (v4.9, Juanjo) — it hangs
+   at the right edge of the column, right-aligned like a signature at the foot of the page. */
 .famcol { display: grid; justify-items: center; gap: .85rem; text-align: center;
   margin: .6rem auto 1.6rem; padding-inline: .75rem; max-width: 44rem; }
 .famcol img { display: block; width: 100%; max-width: 40rem; height: auto;
@@ -349,4 +350,5 @@ table.rain td.obs { color: #1f2937; font-weight: 600; }    /* the measured day *
   border: 1px solid #ddd; border-radius: .5rem; }
 .famcap { margin: 0; font-size: 1.02rem; line-height: 1.4; }
 .famwhy { margin: 0; max-width: 34rem; font-size: .98rem; line-height: 1.55; color: #333; }
-.famded { margin: 0; max-width: 34rem; font-size: .9rem; font-style: italic; color: #555; }
+.famded { margin: 0; max-width: 34rem; font-size: .9rem; font-style: italic; color: #555;
+  justify-self: end; text-align: right; }   /* v4.9: the signature at the foot, to the right */
