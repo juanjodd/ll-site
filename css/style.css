@@ -282,7 +282,12 @@ body.pop-open { overflow: hidden; }        /* the page waits; nothing slides asi
   flex: 1 1 14rem; margin: 0; font-size: .8rem; color: #666; }
 #place .stwhere { display: inline-flex; align-items: baseline; gap: .6rem;
   flex-wrap: wrap; }
-#place .stmeta > a:last-child { margin-left: auto; }
+/* Every direct anchor of the head line is the way home, so every one is pushed right.
+   NOT `a:last-child`: on the family page two twins live here (ES and EN, one hidden),
+   and :last-child does not care about hidden — in Spanish the auto margin landed on the
+   hidden EN link and Volver al mapa sat stuck on the left.  Hidden anchors take no room,
+   so the pages station.js builds (one link, truly last) behave exactly as before. */
+#place .stmeta > a { margin-left: auto; }
 #place .stmeta a { color: #1565c0; text-decoration: none; white-space: nowrap; }
 #place .stmeta a:hover { text-decoration: underline; }
 #place .q { font-size: .92rem; margin-top: .5rem; }   /* the two hydro-year lines */
