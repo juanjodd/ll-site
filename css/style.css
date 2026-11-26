@@ -174,6 +174,10 @@ footer p { font-size: .75rem; color: #555; }
   border-radius: 2px 2px 0 0; }
 .fcbars .obar { left: 1px; }
 .fcbars .fbar { right: 1px; }
+/* v5.2: when only ONE bar shares the track — a live day, or any past day in BASIC —
+   it owns the whole slot; the half-width reservation is for the pair, not for lonely bars */
+.fcbars .fctrack.sgl .obar, .fcbars .fctrack.sgl .fbar,
+.fcbars .fctrack.sgl .fdash { width: 100%; left: 0; right: auto; }
 /* a thin paired bar can never HOLD its number (a "12,4" is wider than any bar) —
    so numbers ride above, dark, and only where there is room for them: the live
    columns on the map page, every column on the place's own page */
@@ -189,19 +193,17 @@ footer p { font-size: .75rem; color: #555; }
 .fcday.now .fcwd { color: #08519c; font-weight: 700; }      /* today's column */
 .fcday.now::before { content: ""; position: absolute; left: -.12rem; top: -.55rem;
   bottom: 0; width: 1px; background: #0f172a; opacity: .5; }
-/* THE BALLOON WEARS NO SUCH LINE (9th prompt): a balloon holds only the five live days,
-   so a rule at its left edge would mark the start of the picture, not the turn from
-   memory to forecast that the line was invented to say.  Today keeps its bold blue
-   initial; the card and the page per place keep the line, where the past really is
-   on the other side of it. */
-.leaflet-popup-content .fcday.now::before { content: none; }
+/* v5.2: THE BALLOON NOW WEARS THE LINE TOO — it carries the five remembered days
+   beside the five live ones, so the turn from memory to forecast happens inside it
+   like anywhere else.  (It used to hold the live days only, where the rule at its
+   left edge would have marked the start of the picture, not the split.) */
 /* fourteen columns on a 375 px screen: the line scrolls in its paragraph instead
-   of the numbers lying about the week.  THE BALLOON IS NOT IN THAT LIST (v3.7):
-   it shows the five live days only, which always fit — no scrollbar in a balloon.
+   of the numbers lying about the week — and since v5.2 the balloon has fourteen
+   columns of its own, so it joins the list with its own tighter tracks.
    And every scrollable series reserves headroom for the numbers riding above the
    bars: max-height keeps even a 100 % bar below the label line, so a wet day's
    number can never be cut by the box (req. 6-2). */
-#card p.hl, #stseries-wrap p.hl { overflow-x: auto; }
+#card p.hl, #stseries-wrap p.hl, .leaflet-popup-content p.hl { overflow-x: auto; }
 .fcbars { padding-inline: .6rem; }                /* edge labels hang nowhere to */
 .leaflet-popup-content .fbar, .leaflet-popup-content .obar { max-height: calc(100% - .72rem); }
 #card .fcbars .fbar, #card .fcbars .obar { max-height: calc(100% - .84rem); }
@@ -340,9 +342,10 @@ table.rain tbody th { text-align: left; font-weight: 600; background: #fafbfc;
   with it and the twenty number columns took the space */
 table.rain td.obs { color: #1f2937; font-weight: 600; }    /* the measured day */
 table.rain td.fcv { color: #08519c; font-weight: 600; }    /* the latest run's word (v5.1 basic) */
-/* v5.1 BASIC table: two honest columns — day and mm — so the wide-window rule below
-   never applies; the list must not scroll sideways on a phone. */
-table.rain.simple { min-width: 0; }
+/* v5.1 BASIC table: honest columns, sized by their content — v5.2 added the day's own
+   00z beside the rain (three columns) and the table stopped stretching to the window:
+   width:auto, so a short list is a short table; it must never scroll sideways on a phone. */
+table.rain.simple { min-width: 0; width: auto; }
 #stmap { height: 340px; margin: .9rem .75rem .3rem; }
 
 /* ---------- the family page (puerto-del-barco.html, 9th prompt) ---------- */

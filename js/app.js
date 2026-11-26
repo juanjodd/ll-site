@@ -155,8 +155,9 @@ function detailLines(st, balloon = false) {
     `<i> ${v == null ? "" : L + " "}${rest}</i></p>`;   // the space is for text, CSS drops it
   /* ES reads "28,8 litros previstos en 5 días" (v2.3): the number is a forecast, and
      Juanjo asked that the word say so.  v3.7: the balloon's series shows the five live
-     days only (no scrollbars in a balloon); the card keeps the whole 5+5. */
-  return `<p class=hl>${barsHtml(st, false, balloon)}</p><div class=q style="--qw:${qw}ch">` +
+     days only; v5.2: Juanjo asked for the memory too — the balloon now carries the
+     whole 5+5 like the card, unnumbered past bars whispering through their titles. */
+  return `<p class=hl>${barsHtml(st, !balloon)}</p><div class=q style="--qw:${qw}ch">` +
     row(rainSum(st), t("in_days", n), " tot") +
     row(st.acc, t("since_1_oct")) +
     (hasP ? row(st.accP, t("between_dates", t("oct1"), lastYear)) : "") + `</div>`;

@@ -216,9 +216,8 @@ function seriesCols(st) {
   return cols;
 }
 
-function barsHtml(st, big = false, liveOnly = false) {
-  let cols = seriesCols(st);
-  if (liveOnly) cols = cols.filter(c => c.live);   // the balloon: five forecast days only
+function barsHtml(st, big = false) {
+  const cols = seriesCols(st);   // v5.2: the balloon too — five remembered, five ahead
   if (!cols.length) return `<p class=hl>${t("fc_none")}</p>`;
   /* A paired bar is a THIN bar: its number never fits inside, so numbered bars carry
      it above (the old white-in-blue treatment died with the wide single bar). */
@@ -240,9 +239,13 @@ function barsHtml(st, big = false, liveOnly = false) {
        compare it against (that is what the balloon has always shown for the live
        days; here the same restraint speaks for the past).  ADVANCED brings the
        pair back: black beside blue, gauge against the archived 00z. */
+    /* v5.2: a track with ONE bar (a live day, or any past day in BASIC) wears .sgl
+       and the bar fills the whole track — the pair's half-width slot is only
+       reserved when the pair is actually drawn. */
+    const pair = !c.live && ADV;
     return `<span class="fcday${isToday(c.date) ? " now" : ""}${c.live ? " live" : " past"}` +
       `" title="${title}">` +
-      `<span class=fctrack>${c.live ? "" : cell(c.obs, "obs", big)}` +
+      `<span class="fctrack${pair ? "" : " sgl"}">${c.live ? "" : cell(c.obs, "obs", big)}` +
       `${c.live || ADV ? cell(c.fc, "fc", big || c.live) : ""}</span>` +
       `<span class=fcwd>${lab}</span></span>`;
   }).join("");
@@ -267,23 +270,30 @@ function tableHtml(T, n, st) {
   if (!T || !Array.isArray(T.vd) || !T.rows || !Array.isArray(T.rows[n])) return "";
   const vd = T.vd, rows = T.rows[n];
   if (!ADV) {
+    /* v5.2: THREE columns — the day, what fell, and the day's OWN archived 00z
+       (the morning's promise about itself).  Future days have no rain to report:
+       their Lluvia stays "–" and Pronóstico carries the live newest cycle. */
     const live = (st && fcDays(st)) || [], fdates = fcDates();
+    const own00z = (r) => r && (r.length === 2 ? r[1] : r[4]);   // thin row or full row
     const body = [];
     /* the days ahead first (newest promise on top of the pile), then the row of
        today — whose number IS the live day 0 while the day is open — then memory */
     for (let k = Math.min(fdates.length, live.length) - 1; k >= 1; k--)
       body.push(`<tr><th scope=row>${fmtDayWd(fdates[k])}</th>` +
+        `<td class=obs>${DASH}</td>` +
         `<td class=fcv title="${t("k_fc")} · ${t("fc_last")}">` +
         `${live[k] == null ? DASH : num(live[k])}</td></tr>`);
     for (let i = vd.length - 1; i >= 0; i--) {
-      const v = (rows[i] || [])[0];
-      const isOpen = i === vd.length - 1 && v == null && live.length;   // today: still unwritten
+      const r0 = rows[i] || [], v = r0[0], fc = own00z(r0);
+      /* today's own 00z may not be archived yet while the day is open — then the
+         live day 0 speaks for it; nobody's number is ever invented */
+      const promise = fc != null ? fc : (isToday(vd[i]) ? live[0] : null);
       body.push(`<tr><th scope=row>${fmtDayWd(vd[i])}</th>` +
-        `<td class="${isOpen ? "fcv" : "obs"}"` +
-        ` title="${isOpen ? t("k_fc") + " · " + t("fc_last") : t("k_obs")}">` +
-        `${(isOpen ? live[0] : v) == null ? DASH : num(isOpen ? live[0] : v)}</td></tr>`);
+        `<td class=obs title="${t("k_obs")}">${v == null ? DASH : num(v)}</td>` +
+        `<td title="${t("k_fc00")}">${promise == null ? DASH : num(promise)}</td></tr>`);
     }
-    const head = `<tr><th scope=col>${t("th_day")}</th><th scope=col>${t("th_obs")}</th></tr>`;
+    const head = `<tr><th scope=col>${t("th_day")}</th><th scope=col>${t("th_obs")}</th>` +
+      `<th scope=col>${t("th_fc")}</th></tr>`;
     return `<div class=rainwrap><table class="rain simple"><thead>${head}</thead>` +
       `<tbody>${body.join("")}</tbody></table></div>`;
   }
