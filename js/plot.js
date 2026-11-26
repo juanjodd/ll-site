@@ -80,7 +80,13 @@ const fmtStamp = (iso) => iso.slice(0, 16).replace("T", " ") + " UTC";
 const fmtDayMon = (iso) => { const [y, m, d] = iso.slice(0, 10).split("-").map(Number);
   return `${d} ${new Date(y, m - 1, 15).toLocaleDateString(locale(), { month: "short" }).replace(/\.$/, "")}`; };
 const num = (v, d = 1) => v == null ? "—"
-  : v.toLocaleString(locale(), { maximumFractionDigits: d });
+  : v.toLocaleString(locale(), { minimumFractionDigits: d, maximumFractionDigits: d });
+/* v5.2: a zero must not shout.  Any rain figure whose OWN text is "0,0" carries
+   .z and steps down to plain weight wherever it is drawn — bar labels, the q
+   column, the table.  (null never reaches here: it draws a dash, not a figure.) */
+const isZero = (v) => num(v) === num(0);
+const zAttr = (v) => isZero(v) ? ' class="z"' : "";      // a bare <b> with no other class
+const zCls = (v) => isZero(v) ? " z" : "";                // joins an existing class list
 const norm = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 /* A forecast is ONE thing everywhere on the site: an ordered array of calendar-day
    accumulations, index 0 = today (data.json contract, Phase 8).  Marker colour,
@@ -165,6 +171,13 @@ const BANDS = [[0, "band_none"], [0.05, "band_trace"], [1, "band_light"],
    Marker, card border, directory dot and bracket amount all come from it — the
    history (st.t) never touches it (req. 12 stays: live newest cycle, everywhere). */
 const rainSum = (s) => (fcDays(s) || []).reduce((a, b) => a + (b || 0), 0);
+/* v5.2: the observed twin of rainSum — what actually fell in the five CLOSED days,
+   the same memory the black bars draw.  A stretch with no measurement at all stays
+   empty ("—"): never an invented zero. */
+const obsSum = (s) => {
+  const v = (Array.isArray(s.t) ? s.t : []).map(r => r && r[0]).filter(x => x != null);
+  return v.length ? v.reduce((a, b) => a + b, 0) : null;
+};
 const WET_MIN = 0.05;           // below this the ramp says "nada" → not listed either
 /* Log height scale: a 30 l day must not be 300× the height of a 0,1 l day, yet a
    nearly dry week must still show which days were wetter.  Bar height is
@@ -226,7 +239,7 @@ function barsHtml(st, big = false) {
     const fr = barFrac(v);
     return `<i class="${kind === "obs" ? "obar" : "fbar"}${numbered ? " out" : " plain"}"` +
       ` style="height:${(fr * 100).toFixed(1)}%;background:${kind === "obs" ? OBS_COLOR : fcColor(v)}"` +
-      (numbered ? `><b>${num(v)}</b></i>` : "></i>");
+      (numbered ? `><b${zAttr(v)}>${num(v)}</b></i>` : "></i>");
   };
   const html = cols.map(c => {
     const when = isToday(c.date) ? t("today") : c.live && c.ahead === 1 ? t("tomorrow") : fmtDay(c.date);
@@ -281,7 +294,7 @@ function tableHtml(T, n, st) {
     for (let k = Math.min(fdates.length, live.length) - 1; k >= 1; k--)
       body.push(`<tr><th scope=row>${fmtDayWd(fdates[k])}</th>` +
         `<td class=obs>${DASH}</td>` +
-        `<td class=fcv title="${t("k_fc")} · ${t("fc_last")}">` +
+        `<td class="fcv${zCls(live[k])}" title="${t("k_fc")} · ${t("fc_last")}">` +
         `${live[k] == null ? DASH : num(live[k])}</td></tr>`);
     for (let i = vd.length - 1; i >= 0; i--) {
       const r0 = rows[i] || [], v = r0[0], fc = own00z(r0);
@@ -289,8 +302,8 @@ function tableHtml(T, n, st) {
          live day 0 speaks for it; nobody's number is ever invented */
       const promise = fc != null ? fc : (isToday(vd[i]) ? live[0] : null);
       body.push(`<tr><th scope=row>${fmtDayWd(vd[i])}</th>` +
-        `<td class=obs title="${t("k_obs")}">${v == null ? DASH : num(v)}</td>` +
-        `<td title="${t("k_fc00")}">${promise == null ? DASH : num(promise)}</td></tr>`);
+        `<td class="obs${zCls(v)}" title="${t("k_obs")}">${v == null ? DASH : num(v)}</td>` +
+        `<td class="fcv${zCls(promise)}" title="${t("k_fc00")}">${promise == null ? DASH : num(promise)}</td></tr>`);
     }
     const head = `<tr><th scope=col>${t("th_day")}</th><th scope=col>${t("th_obs")}</th>` +
       `<th scope=col>${t("th_fc")}</th></tr>`;
@@ -310,7 +323,7 @@ function tableHtml(T, n, st) {
        read "–" — truthfully: those runs are not in the file. */
     const r = r0.length === 2 ? [r0[0], null, null, null, r0[1]] : r0;
     body.push(`<tr><th scope=row>${fmtDayWd(vd[i])}</th>` +
-      r.map((v, k) => `<td${k === 0 ? " class=obs" : ""}>${v == null ? DASH : num(v)}</td>`)
+      r.map((v, k) => `<td class="${k === 0 ? "obs" : "fcv"}${zCls(v)}">${v == null ? DASH : num(v)}</td>`)
           .join("") + "</tr>");
   }
   const HOURS = "<th>18z</th><th>12z</th><th>06z</th><th>00z</th>";
@@ -325,18 +338,21 @@ function tableHtml(T, n, st) {
 }
 
 function accRows(st) {
-  /* The two hydrological-year accumulations (7th prompt: back on the page per
-     place).  Same aligned-numbers treatment as the card — but here only the
-     memory lines: the forecast total lives in the bars above. */
+  /* The accumulations (7th prompt: back on the page per place; v5.2: all of them).
+     Same aligned-numbers treatment as the card: the five live days ahead, the five
+     closed ones behind, then the two hydrological-year lines. */
   const L = t("litres");
   const shown = (v) => v == null ? "—" : num(v);       // a missing value never says "— litros"
   const D0 = (fcDates()[0] || "");
   const hyYear = +D0.slice(0, 4) - (D0.slice(5, 7) < "10" ? 1 : 0);
   const lastYear = dayOfYearLong(D0, hyYear - 1);
-  const qw = Math.max(...[st.acc, st.accP].map(v => shown(v).length));
-  const row = (v, rest) => `<p class="qrow"><b>${shown(v)}</b>` +
+  const f5 = rainSum(st), o5 = obsSum(st);
+  const qw = Math.max(...[f5, o5, st.acc, st.accP].map(v => shown(v).length));
+  const row = (v, rest, cls = "") => `<p class="qrow${cls}"><b${zAttr(v)}>${shown(v)}</b>` +
     `<i> ${v == null ? "" : L + " "}${rest}</i></p>`;
   return `<div class=q style="--qw:${qw}ch">` +
+    row(f5, t("in_days", fcDates().length), " tot") +
+    row(o5, t("in_days_past", histDates().length)) +
     row(st.acc, t("since_1_oct")) +
     ("accP" in st ? row(st.accP, t("between_dates", t("oct1"), lastYear)) : "") +
     `</div>`;

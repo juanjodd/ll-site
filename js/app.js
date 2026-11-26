@@ -148,19 +148,26 @@ function detailLines(st, balloon = false) {
   const hyYear = +D0.slice(0, 4) - (D0.slice(5, 7) < "10" ? 1 : 0);
   const lastYear = dayOfYearLong(D0, hyYear - 1);
   const shown = (v) => v == null ? "—" : num(v);        // a missing value never says "— litros"
+  const f5 = rainSum(st), o5 = obsSum(st);
   /* the number column is as wide as the widest number of THIS place (in digits: `ch`
      is one tabular digit, so the box can never clip what goes in it) */
-  const qw = Math.max(...[rainSum(st), st.acc, st.accP].map(v => shown(v).length));
-  const row = (v, rest, cls = "") => `<p class="qrow${cls}"><b>${shown(v)}</b>` +
+  const qw = Math.max(...[f5, o5, st.acc, st.accP].map(v => shown(v).length));
+  const row = (v, rest, cls = "") => `<p class="qrow${cls}"><b${zAttr(v)}>${shown(v)}</b>` +
     `<i> ${v == null ? "" : L + " "}${rest}</i></p>`;   // the space is for text, CSS drops it
   /* ES reads "28,8 litros previstos en 5 días" (v2.3): the number is a forecast, and
      Juanjo asked that the word say so.  v3.7: the balloon's series shows the five live
      days only; v5.2: Juanjo asked for the memory too — the balloon now carries the
      whole 5+5 like the card, unnumbered past bars whispering through their titles. */
   return `<p class=hl>${barsHtml(st, !balloon)}</p><div class=q style="--qw:${qw}ch">` +
-    row(rainSum(st), t("in_days", n), " tot") +
+    row(f5, t("in_days", n), " tot") +
+    /* v5.2: the same reckoning BACKWARDS — what the gauges closed in the five
+       remembered days, right under the promise about the five ahead */
+    row(o5, t("in_days_past", histDates().length)) +
+    /* v5.2: the balloon answers only "how much, ahead / behind" — the two
+       hydrological-year lines stay in the card and the page per place */
+    (balloon ? "" :
     row(st.acc, t("since_1_oct")) +
-    (hasP ? row(st.accP, t("between_dates", t("oct1"), lastYear)) : "") + `</div>`;
+    (hasP ? row(st.accP, t("between_dates", t("oct1"), lastYear)) : "")) + `</div>`;
 }
 
 function popupHtml(st) {

@@ -181,9 +181,14 @@ footer p { font-size: .75rem; color: #555; }
 /* a thin paired bar can never HOLD its number (a "12,4" is wider than any bar) —
    so numbers ride above, dark, and only where there is room for them: the live
    columns on the map page, every column on the place's own page */
+/* v5.2: the figures follow the site's colour voice — a forecast number is the
+   forecast blue, an observed one the bar's own dark; the .z rule (below, at the
+   table block) still drops a 0,0 out of bold */
 .fcbars .fbar b, .fcbars .obar b { position: absolute; left: 50%; transform: translateX(-50%);
-  bottom: 100%; color: #444; font-weight: 500; font-size: .56rem; line-height: 1;
+  bottom: 100%; font-weight: 500; font-size: .56rem; line-height: 1;
   white-space: nowrap; font-variant-numeric: tabular-nums; padding-bottom: 1px; }
+.fcbars .fbar b { color: #08519c; }
+.fcbars .obar b { color: #1f2937; }
 .fcbars .fdash { position: absolute; bottom: 0; width: 46%; text-align: center;
   font-style: normal; font-weight: 700; font-size: .72rem; line-height: 1; }
 .fcbars .fdash.obs { left: 1px; color: #1f2937; }
@@ -203,7 +208,12 @@ footer p { font-size: .75rem; color: #555; }
    And every scrollable series reserves headroom for the numbers riding above the
    bars: max-height keeps even a 100 % bar below the label line, so a wet day's
    number can never be cut by the box (req. 6-2). */
-#card p.hl, #stseries-wrap p.hl, .leaflet-popup-content p.hl { overflow-x: auto; }
+/* v5.2: the scrollable paragraphs become FLEX containers: as a plain text line the
+   inline-flex figure sat on a baseline and its box could end shorter than the figure
+   itself — which showed a useless scrollbar at the right.  Box fits figure, y never
+   scrolls, and the today-hairline that pokes above was clipped by the x-scroll here
+   already — nothing new to hide. */
+#card p.hl, #stseries-wrap p.hl, .leaflet-popup-content p.hl { display: flex; overflow-x: auto; overflow-y: hidden; }
 .fcbars { padding-inline: .6rem; }                /* edge labels hang nowhere to */
 .leaflet-popup-content .fbar, .leaflet-popup-content .obar { max-height: calc(100% - .72rem); }
 #card .fcbars .fbar, #card .fcbars .obar { max-height: calc(100% - .84rem); }
@@ -226,7 +236,9 @@ footer p { font-size: .75rem; color: #555; }
 .q .qrow b { flex: none; width: var(--qw, 4ch); text-align: right; font-weight: 600;
   font-variant-numeric: tabular-nums; white-space: pre; }
 .q .qrow i { font-style: normal; min-width: 0; }
-.q .tot i { font-size: .9em; color: #555; }
+/* v5.2: the five-day promise wears the site's own blue (the h1's #4393c3) and the
+   same font-size as the line under it — one voice, two shades, no shrinking */
+.q .tot b, .q .tot i { color: #4393c3; }
 #card .q { font-size: .95rem; }
 .leaflet-popup-content .q { font-size: .85rem; }
 
@@ -341,7 +353,10 @@ table.rain tbody th { text-align: left; font-weight: 600; background: #fafbfc;
   weekday now (v4.7): the label gave back ~3rem, so the table's floor shrank
   with it and the twenty number columns took the space */
 table.rain td.obs { color: #1f2937; font-weight: 600; }    /* the measured day */
-table.rain td.fcv { color: #08519c; font-weight: 600; }    /* the latest run's word (v5.1 basic) */
+table.rain td.fcv { color: #08519c; font-weight: 600; }    /* every forecast figure, both depths */
+/* v5.2: a zero steps back — the figure that reads "0,0" carries .z and loses the
+   bold everywhere it is drawn; the colour stays, only the shout goes. */
+.fcbars b.z, .q .qrow b.z, table.rain td.z { font-weight: 400; }
 /* v5.1 BASIC table: honest columns, sized by their content — v5.2 added the day's own
    00z beside the rain (three columns) and the table stopped stretching to the window:
    width:auto, so a short list is a short table; it must never scroll sideways on a phone. */
